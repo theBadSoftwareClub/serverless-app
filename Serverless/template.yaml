@@ -1,0 +1,730 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  An Example Serverless Application
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 3
+    Environment:
+      Variables:
+        TABLE_NAME: data-table
+
+Resources:
+  ExampleUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: applicationusers
+      AutoVerifiedAttributes:
+          - email
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+            - Name: verified_email
+              Priority: 1
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+          RequireUppercase: true
+      UsernameAttributes:
+        - email
+      Schema:
+        - AttributeDataType: String
+          Name: email
+          Required: false
+
+  ExampleUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref ExampleUserPool
+      ClientName: ExampleUserPoolClient
+      GenerateSecret: false
+      AllowedOAuthFlows:
+        - implicit
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthScopes:
+        - openid
+        - email
+        - profile
+      CallbackURLs:
+        - https://exampleapp.thebadsoftwareclub.net
+      ExplicitAuthFlows:
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_CUSTOM_AUTH
+      SupportedIdentityProviders:
+        - COGNITO
+
+  ExampleAuthDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      CustomDomainConfig:
+        CertificateArn: arn:aws:acm:us-east-1:822675929081:certificate/16199f7e-0c14-47a7-b348-2e294738b3ba
+      Domain: exampleauth.thebadsoftwareclub.net
+      UserPoolId: !Ref ExampleUserPool
+
+  ExampleApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Domain:
+        DomainName: exampleapi.thebadsoftwareclub.net
+        CertificateArn: arn:aws:acm:us-east-1:822675929081:certificate/16199f7e-0c14-47a7-b348-2e294738b3ba
+        EndpointConfiguration: EDGE
+        Route53:
+          HostedZoneId: Z0608589Z32H3ZBSW3HW
+
+      Auth:
+        Authorizers:
+          exampleAuth:
+            AuthorizationScopes:
+              - email
+              - openid
+            UserPoolArn: !GetAtt ExampleUserPool.Arn
+            Identity:
+              Header: Authorization
+      StageName: Prod
+      DefinitionBody:
+        openapi: "3.0.1"
+        info:
+          title: "ExampleApi"
+          version: "1.0"
+        servers:
+          - url: "https://exampleapi.thebadsoftwareclub.net"
+        paths:
+          /:
+            get:
+              parameters:
+                - name: "Access-Control-Allow-Origin"
+                  in: "header"
+                  schema:
+                    type: "string"
+              responses:
+                "404":
+                  description: "404 response"
+                  content: { }
+                "500":
+                  description: "500 response"
+                  content: { }
+                "200":
+                  description: "200 response"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      schema:
+                        type: "string"
+                    Access-Control-Allow-Methods:
+                      schema:
+                        type: "string"
+                    Access-Control-Allow-Credentials:
+                      schema:
+                        type: "string"
+                    Access-Control-Allow-Headers:
+                      schema:
+                        type: "string"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/Empty"
+              security:
+                - exampleAuth: [ ]
+              x-amazon-apigateway-integration:
+                responses:
+                  "5\\d{2}":
+                    statusCode: "500"
+                  "2\\d{2}":
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                    responseTemplates:
+                      application/json: "{\r\n    \"statusCode\": 200,\r\n    \"message\"\
+                                  : \"API Response\"\r\n}"
+                requestTemplates:
+                  application/json: "{\"statusCode\": 200}"
+                passthroughBehavior: "when_no_templates"
+                type: "mock"
+            options:
+              responses:
+                "200":
+                  description: "200 response"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      schema:
+                        type: "string"
+                    Access-Control-Allow-Methods:
+                      schema:
+                        type: "string"
+                    Access-Control-Allow-Credentials:
+                      schema:
+                        type: "string"
+                    Access-Control-Allow-Headers:
+                      schema:
+                        type: "string"
+                  content: { }
+              x-amazon-apigateway-integration:
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                requestTemplates:
+                  application/json: "{\"statusCode\": 200}"
+                passthroughBehavior: "when_no_match"
+                type: "mock"
+          /items:
+            get:
+              responses:
+                "200":
+                  description: "200 response"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      schema:
+                        type: "string"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/Empty"
+              security:
+                - exampleAuth: [ ]
+              x-amazon-apigateway-integration:
+                httpMethod: "POST"
+                uri: "arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:822675929081:function:itemsFn/invocations"
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                passthroughBehavior: "when_no_match"
+                contentHandling: "CONVERT_TO_TEXT"
+                type: "aws_proxy"
+            post:
+              responses:
+                "200":
+                  description: "200 response"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      schema:
+                        type: "string"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/Empty"
+              security:
+                - exampleAuth: [ ]
+              x-amazon-apigateway-integration:
+                httpMethod: "POST"
+                uri: "arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:822675929081:function:itemsFn/invocations"
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                passthroughBehavior: "when_no_match"
+                contentHandling: "CONVERT_TO_TEXT"
+                type: "aws_proxy"
+            options:
+              responses:
+                "200":
+                  description: "200 response"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      schema:
+                        type: "string"
+                    Access-Control-Allow-Methods:
+                      schema:
+                        type: "string"
+                    Access-Control-Allow-Headers:
+                      schema:
+                        type: "string"
+                  content: { }
+              x-amazon-apigateway-integration:
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST'"
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                    responseTemplates:
+                      application/json: "{}\n"
+                requestTemplates:
+                  application/json: "{\n  \"statusCode\" : 200\n}\n"
+                passthroughBehavior: "when_no_match"
+                type: "mock"
+          /items/createdBy:
+            get:
+              responses:
+                "200":
+                  description: "200 response"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      schema:
+                        type: "string"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/Empty"
+              security:
+                - exampleAuth: [ ]
+              x-amazon-apigateway-integration:
+                httpMethod: "POST"
+                uri: "arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:822675929081:function:itemsFn/invocations"
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                passthroughBehavior: "when_no_match"
+                contentHandling: "CONVERT_TO_TEXT"
+                type: "aws_proxy"
+            options:
+              responses:
+                "200":
+                  description: "200 response"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      schema:
+                        type: "string"
+                    Access-Control-Allow-Methods:
+                      schema:
+                        type: "string"
+                    Access-Control-Allow-Headers:
+                      schema:
+                        type: "string"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/Empty"
+              x-amazon-apigateway-integration:
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                requestTemplates:
+                  application/json: "{\"statusCode\": 200}"
+                passthroughBehavior: "when_no_match"
+                type: "mock"
+          /items/{itemId+}:
+            get:
+              parameters:
+                - name: "itemId"
+                  in: "path"
+                  required: true
+                  schema:
+                    type: "string"
+              responses:
+                "200":
+                  description: "200 response"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      schema:
+                        type: "string"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/Empty"
+              security:
+                - exampleAuth: [ ]
+              x-amazon-apigateway-integration:
+                httpMethod: "POST"
+                uri: "arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:822675929081:function:itemsFn/invocations"
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                passthroughBehavior: "when_no_match"
+                cacheNamespace: "15yjo6"
+                cacheKeyParameters:
+                  - "method.request.path.itemId"
+                contentHandling: "CONVERT_TO_TEXT"
+                type: "aws_proxy"
+            put:
+              parameters:
+                - name: "itemId"
+                  in: "path"
+                  required: true
+                  schema:
+                    type: "string"
+              responses:
+                "200":
+                  description: "200 response"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      schema:
+                        type: "string"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/Empty"
+              security:
+                - exampleAuth: [ ]
+              x-amazon-apigateway-integration:
+                httpMethod: "POST"
+                uri: "arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:822675929081:function:itemsFn/invocations"
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                passthroughBehavior: "when_no_match"
+                cacheNamespace: "15yjo6"
+                cacheKeyParameters:
+                  - "method.request.path.itemId"
+                contentHandling: "CONVERT_TO_TEXT"
+                type: "aws_proxy"
+            delete:
+              parameters:
+                - name: "itemId"
+                  in: "path"
+                  required: true
+                  schema:
+                    type: "string"
+              responses:
+                "200":
+                  description: "200 response"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      schema:
+                        type: "string"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/Empty"
+              security:
+                - exampleAuth: [ ]
+              x-amazon-apigateway-integration:
+                httpMethod: "POST"
+                uri: "arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:822675929081:function:itemsFn/invocations"
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                passthroughBehavior: "when_no_match"
+                cacheNamespace: "15yjo6"
+                cacheKeyParameters:
+                  - "method.request.path.itemId"
+                contentHandling: "CONVERT_TO_TEXT"
+                type: "aws_proxy"
+            options:
+              parameters:
+                - name: "itemId"
+                  in: "path"
+                  required: true
+                  schema:
+                    type: "string"
+              responses:
+                "200":
+                  description: "200 response"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      schema:
+                        type: "string"
+                    Access-Control-Allow-Methods:
+                      schema:
+                        type: "string"
+                    Access-Control-Allow-Headers:
+                      schema:
+                        type: "string"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/Empty"
+              x-amazon-apigateway-integration:
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Methods: "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                requestTemplates:
+                  application/json: "{\"statusCode\": 200}"
+                passthroughBehavior: "when_no_match"
+                type: "mock"
+            x-amazon-apigateway-any-method:
+              parameters:
+                - name: "itemId"
+                  in: "path"
+                  required: true
+                  schema:
+                    type: "string"
+              responses:
+                "200":
+                  description: "200 response"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/Empty"
+              x-amazon-apigateway-integration:
+                httpMethod: "ANY"
+                uri: "https://exampleapp.thebadsoftwareclub.net/items/{itemId}"
+                responses:
+                  default:
+                    statusCode: "200"
+                requestParameters:
+                  integration.request.path.planId: "method.request.path.itemId"
+                passthroughBehavior: "when_no_match"
+                cacheNamespace: "15yjo6"
+                cacheKeyParameters:
+                  - "method.request.path.itemId"
+                type: "http_proxy"
+
+  itemsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: items
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: createdBy
+          AttributeType: S
+        - AttributeName: itemId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: itemId
+          KeyType: HASH
+        - AttributeName: createdBy
+          KeyType: RANGE
+
+  ExampleDataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: exampleapp-data-store
+
+  ExampleClientAppBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: exampleapp.thebadsoftwareclub.net
+
+  ExampleClientAppBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ExampleClientAppBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Action: 's3:GetObject'
+            Resource:
+              - !Sub "arn:aws:s3:::${ExampleClientAppBucket}/*"
+            Principal:
+              AWS: !Sub "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${CloudFrontOriginAccessIdentity}"
+
+  CloudFrontOriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: 'Serverless website OA'
+
+  ExampleAppDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: 'Cloudfront distribution for client App'
+        Aliases:
+          - exampleapp.thebadsoftwareclub.net
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - HEAD
+            - GET
+            - OPTIONS
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          Compress: true
+          SmoothStreaming: false
+          TargetOriginId: exampleapp-client-app
+          ViewerProtocolPolicy: redirect-to-https
+        DefaultRootObject: index.html
+        Enabled: true
+        HttpVersion: http2
+        Logging:
+          Bucket: ''
+          IncludeCookies: false
+          Prefix: ''
+        Origins:
+          - ConnectionAttempts: 3
+            ConnectionTimeout: 10
+            DomainName: !GetAtt ExampleClientAppBucket.DomainName
+            Id: exampleapp-client-app
+            OriginPath: ''
+            OriginShield:
+              Enabled: false
+            S3OriginConfig:
+              OriginAccessIdentity:
+                Fn::Sub: 'origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}'
+        PriceClass: PriceClass_All
+        ViewerCertificate:
+          AcmCertificateArn: arn:aws:acm:us-east-1:822675929081:certificate/16199f7e-0c14-47a7-b348-2e294738b3ba
+          SslSupportMethod: sni-only
+        WebACLId: ''
+
+  ExampleAppClientURL:
+    Type: 'AWS::Route53::RecordSetGroup'
+    Properties:
+      HostedZoneId: Z0608589Z32H3ZBSW3HW
+      RecordSets:
+        - Name: exampleapp.thebadsoftwareclub.net
+          Type: A
+          AliasTarget:
+            HostedZoneId: Z2FDTNDATAQYW2
+            DNSName: !GetAtt
+              - ExampleAppDistribution
+              - DomainName
+
+#  ExampleAppAuthURL:
+#   ... creating the record set for the cognito auth url is still pending an  outstanding issue and requiresd a workaround not inckluded in this example: https://github.com/aws-cloudformation/cloudformation-coverage-roadmap/issues/241
+
+  itemsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+
+  itemsFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: itemsFn
+      Role: !GetAtt itemsRole.Arn
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.7
+      CodeUri: functions/items/
+      Description: >-
+        items
+      MemorySize: 512
+      Timeout: 10
+      Layers:
+        - arn:aws:lambda:us-west-2:822675929081:layer:dependencies:3
+      Events:
+        ItemsEvent:
+          Type: Api
+          Properties:
+            Path: '/items'
+            Method: get
+            RestApiId:
+              Ref: ExampleApi
+        CreatedByEvent:
+          Type: Api
+          Properties:
+            Path: '/items/createdBy'
+            Method: get
+            RestApiId:
+              Ref: ExampleApi
+        NewItemEvent:
+          Type: Api
+          Properties:
+            Path: '/items'
+            Method: post
+            RestApiId:
+              Ref: ExampleApi
+        GetItemEvent:
+          Type: Api
+          Properties:
+            Path: '/items/{itemId+}'
+            Method: get
+            RestApiId:
+              Ref: ExampleApi
+        PutItemEvent:
+          Type: Api
+          Properties:
+            Path: '/items/{itemId+}'
+            Method: put
+            RestApiId:
+              Ref: ExampleApi
+        DeleteItemEvent:
+          Type: Api
+          Properties:
+            Path: '/items/{itemId+}'
+            Method: delete
+            RestApiId:
+              Ref: ExampleApi
+
+  itemsLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${itemsFn}"
+      RetentionInDays: 30
+
+  LogGroupPolicy:
+    Type: "AWS::IAM::Policy"
+    Properties:
+      PolicyName: "allow-lambda-logging"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - logs:CreateLogStream
+              - logs:DescribeLogStreams
+              - logs:PutLogEvents
+            Resource:
+              - "arn:aws:logs:*:822675929081:log-group:/aws/lambda/itemsFn"
+              - "arn:aws:logs:*:822675929081:log-group:/aws/lambda/itemsFn:log-stream:*"
+      Roles:
+        - !Ref itemsRole
+
+  DynamoDBPolicy:
+    Type: "AWS::IAM::Policy"
+    Properties:
+      PolicyName: "allow-dynamoDB-access"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:BatchGetItem
+              - dynamodb:BatchWriteItem
+              - dynamodb:ConditionCheckItem
+              - dynamodb:PutItem
+              - dynamodb:DeleteItem
+              - dynamodb:DescribeContributorInsights
+              - dynamodb:Scan
+              - dynamodb:ListTagsOfResource
+              - dynamodb:Query
+              - dynamodb:DescribeStream
+              - dynamodb:UpdateItem
+              - dynamodb:DescribeTimeToLive
+              - dynamodb:PartiQLSelect
+              - dynamodb:DescribeTable
+              - dynamodb:GetShardIterator
+              - dynamodb:GetItem
+              - dynamodb:DescribeContinuousBackups
+              - dynamodb:DescribeKinesisStreamingDestination
+              - dynamodb:GetRecords
+              - dynamodb:DescribeTableReplicaAutoScaling
+            Resource:
+              - "arn:aws:dynamodb:us-west-2:822675929081:table/items"
+              - "arn:aws:dynamodb:*:822675929081:table/items/stream/*"
+      Roles:
+        - !Ref itemsRole
+
+  S3DataStorePolicy:
+    Type: "AWS::IAM::Policy"
+    Properties:
+      PolicyName: "allow-datastore-access"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:PutObject
+              - s3:GetObject
+              - s3:ListBucket
+              - s3:DeleteObject
+            Resource:
+              - "arn:aws:s3:::exampleapp-data-store/*"
+              - "arn:aws:s3:::exampleapp-data-store"
+      Roles:
+        - !Ref itemsRole

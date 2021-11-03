@@ -1,0 +1,10 @@
+{
+  "short_name": "Example",
+  "name": "Example App",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }]
+}
