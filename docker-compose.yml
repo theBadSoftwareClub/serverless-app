@@ -7,12 +7,12 @@ services:
       - 3000
     environment:
       CHOKIDAR_USEPOLLING: 'true'
-      REACT_APP_APP_URL: 'https://exampleapp.thebadsoftwareclub.net'
-      REACT_APP_API_URL: 'https://exampleapi.thebadsoftwareclub.net'
-      REACT_APP_AUTH_DOMAIN: 'exampleauth.thebadsoftwareclub.net'
-      REACT_APP_AWS_REGION: 'us-west-2'
-      REACT_APP_AWS_USERPOOLID: 'KecZiajyf'
-      REACT_APP_AWS_USERPOOLCLIENTID: '2hbs3roftndbebt06jnjkev2g1'
+      REACT_APP_APP_URL: 'https://exampleapp.domainname.net'
+      REACT_APP_API_URL: 'https://exampleapi.domainname.net'
+      REACT_APP_AUTH_DOMAIN: 'exampleauth.domainname.net'
+      REACT_APP_AWS_REGION: 'us-east-1'
+      REACT_APP_AWS_USERPOOLID: ''
+      REACT_APP_AWS_USERPOOLCLIENTID: '
 
     ports:
       - 80:3000
@@ -27,12 +27,12 @@ services:
     depends_on:
       - development
     environment:
-      REACT_APP_APP_URL: 'https://exampleapp.thebadsoftwareclub.net'
-      REACT_APP_API_URL: 'https://exampleapi.thebadsoftwareclub.net'
-      REACT_APP_AUTH_DOMAIN: 'exampleauth.thebadsoftwareclub.net'
-      REACT_APP_AWS_REGION: 'us-west-2'
-      REACT_APP_AWS_USERPOOLID: 'KecZiajyf'
-      REACT_APP_AWS_USERPOOLCLIENTID: '2hbs3roftndbebt06jnjkev2g1'
+      REACT_APP_APP_URL: 'https://exampleapp.domainname.net'
+      REACT_APP_API_URL: 'https://exampleapi.domainname.net'
+      REACT_APP_AUTH_DOMAIN: 'exampleauth.domainname.net'
+      REACT_APP_AWS_REGION: 'us-east-1'
+      REACT_APP_AWS_USERPOOLID: ''
+      REACT_APP_AWS_USERPOOLCLIENTID: '
 
     volumes:
       - ./Client/src:/usr/src/app/src
