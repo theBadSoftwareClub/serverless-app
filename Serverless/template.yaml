@@ -1,27 +1,64 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  An Example Serverless Application
+  A Serverless Application
 
-# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
-Globals:
-  Function:
-    Timeout: 3
-    Environment:
-      Variables:
-        TABLE_NAME: data-table
+Parameters:
+  RootDomain:
+    Type: String
+    Default: "thebadsoftwareclub.net"
+
+  RootCertificateArn:
+    Type: String
+    Default: "arn:aws:acm:us-east-1:822675929081:certificate/16199f7e-0c14-47a7-b348-2e294738b3ba"
+
+  RootHostedZone:
+    Type: AWS::Route53::HostedZone::Id
+    Default: Z0608589Z32H3ZBSW3HW
+
+  CfHostedZone:
+    Type: AWS::Route53::HostedZone::Id
+    Default: Z2FDTNDATAQYW2
+
+  AuthDomain:
+    Type: String
+    Default: !Sub
+      - "mtnauth.${Domain}"
+      - Domain: !Ref RootDomain
+  ApiDomain:
+    Type: String
+    Default: !Sub
+      - "mtnapi.${Domain}"
+      - Domain: !Ref RootDomain
+  AppDomain:
+    Type: String
+    Default: !Sub
+      - "mtnapp.${Domain}"
+      - Domain: !Ref RootDomain
+  MtnAppUrl:
+    Type: String
+    Default: !Sub
+      - "https://.${Domain}"
+      - Domain: !Ref AppDomain
+  MtnApiUrl:
+    Type: String
+    Default: !Sub
+      - "https://.${Domain}"
+      - Domain: !Ref ApiDomain
 
 Resources:
-  ExampleUserPool:
+
+  # The Cognito User Pool, Client, and Domain are for the Authentication Service
+  MtnUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
-      UserPoolName: applicationusers
+      UserPoolName: mtnusers
       AutoVerifiedAttributes:
-          - email
+        - email
       AccountRecoverySetting:
         RecoveryMechanisms:
-            - Name: verified_email
-              Priority: 1
+          - Name: verified_email
+            Priority: 1
       Policies:
         PasswordPolicy:
           MinimumLength: 8
@@ -36,19 +73,11 @@ Resources:
           Name: email
           Required: false
 
-  ExampleUserPoolDomain:
-    Type: AWS::Cognito::UserPoolDomain
-    Properties:
-      UserPoolId: !Ref ExampleUserPool
-      Domain: "exampleauth.thebadsoftwareclub.net"
-      CustomDomainConfig:
-        CertificateArn: arn:aws:acm:us-east-1:822675929081:certificate/16199f7e-0c14-47a7-b348-2e294738b3ba
-
-  ExampleUserPoolClient:
+  MtnUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:
-      UserPoolId: !Ref ExampleUserPool
-      ClientName: ExampleUserPoolClient
+      UserPoolId: !Ref MtnUserPool
+      ClientName: MtnUserPoolClient
       GenerateSecret: false
       AllowedOAuthFlows:
         - implicit
@@ -58,7 +87,7 @@ Resources:
         - email
         - profile
       CallbackURLs:
-        - https://exampleapp.thebadsoftwareclub.net
+        - !Ref MtnAppUrl
       ExplicitAuthFlows:
         - ALLOW_REFRESH_TOKEN_AUTH
         - ALLOW_USER_PASSWORD_AUTH
@@ -67,15 +96,66 @@ Resources:
       SupportedIdentityProviders:
         - COGNITO
 
-  ExampleApi:
+  MtnUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      UserPoolId: !Ref MtnUserPool
+      Domain: !Ref mtnAuthDomain
+      CustomDomainConfig:
+        CertificateArn: !Ref RootCertificateArn
+
+        #   ... creating the record set for the cognito auth url is still pending an  outstanding issue and requires a
+        #  workaround not included in this example: https://github.com/aws-cloudformation/cloudformation-coverage-roadmap/issues/241
+
+  # The Data Bucket is for Object Storage
+  MtnDataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: mtnapp-data-store
+
+  # DynamoDB Tables are for key-value data (application indexes)
+  MtnPlansTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: mtnplans
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: createdBy
+          AttributeType: S
+        - AttributeName: planId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: planId
+          KeyType: HASH
+        - AttributeName: createdBy
+          KeyType: RANGE
+
+  MtnRunsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: mtnruns
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: planId
+          AttributeType: S
+        - AttributeName: runId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: planId
+          KeyType: HASH
+        - AttributeName: runId
+          KeyType: RANGE
+
+  # The Api and Lambda Functions make up the server-side functionality
+  MtnApi:
     Type: AWS::Serverless::Api
     Properties:
       Domain:
-        DomainName: exampleapi.thebadsoftwareclub.net
-        CertificateArn: arn:aws:acm:us-east-1:822675929081:certificate/16199f7e-0c14-47a7-b348-2e294738b3ba
+        DomainName: !Ref MtnApiDomain
+        CertificateArn: !Ref RootCertificateArn
         EndpointConfiguration: EDGE
         Route53:
-          HostedZoneId: Z0608589Z32H3ZBSW3HW
+          HostedZoneId: !Ref RootHostedZone
 
       Auth:
         Authorizers:
@@ -90,10 +170,10 @@ Resources:
       DefinitionBody:
         openapi: "3.0.1"
         info:
-          title: "ExampleApi"
+          title: "MtnApi"
           version: "1.0"
         servers:
-          - url: "https://exampleapi.thebadsoftwareclub.net"
+          - url: !Ref MtnApiUrl
         paths:
           /:
             get:
@@ -140,7 +220,7 @@ Resources:
                       method.response.header.Access-Control-Allow-Origin: "'*'"
                     responseTemplates:
                       application/json: "{\r\n    \"statusCode\": 200,\r\n    \"message\"\
-                                  : \"API Response\"\r\n}"
+                                    : \"API Response\"\r\n}"
                 requestTemplates:
                   application/json: "{\"statusCode\": 200}"
                 passthroughBehavior: "when_no_templates"
@@ -478,112 +558,73 @@ Resources:
                   - "method.request.path.itemId"
                 type: "http_proxy"
 
-  itemsTable:
-    Type: AWS::DynamoDB::Table
+  MtnPlansFn:
+    Type: AWS::Serverless::Function
     Properties:
-      TableName: items
-      BillingMode: PAY_PER_REQUEST
-      AttributeDefinitions:
-        - AttributeName: createdBy
-          AttributeType: S
-        - AttributeName: itemId
-          AttributeType: S
-      KeySchema:
-        - AttributeName: itemId
-          KeyType: HASH
-        - AttributeName: createdBy
-          KeyType: RANGE
+      FunctionName: plansFn
+      Role: !GetAtt plansRole.Arn
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.7
+      CodeUri: functions/plans/
+      Description: >-
+        plans
+      MemorySize: 512
+      Timeout: 10
+      Layers:
+        - arn:aws:lambda:us-west-2:822675929081:layer:dependencies:3
+      Events:
+        PlansEvent:
+          Type: Api
+          Properties:
+            Path: '/plans'
+            Method: get
+            RestApiId:
+              Ref: MtnApi
+        CreatedByEvent:
+          Type: Api
+          Properties:
+            Path: '/plans/createdBy'
+            Method: get
+            RestApiId:
+              Ref: MtnApi
+        NewPlanEvent:
+          Type: Api
+          Properties:
+            Path: '/plans'
+            Method: post
+            RestApiId:
+              Ref: MtnApi
+        GetPlanEvent:
+          Type: Api
+          Properties:
+            Path: '/plans/{planId+}'
+            Method: get
+            RestApiId:
+              Ref: ExampleApi
+        UpdatePlanEvent:
+          Type: Api
+          Properties:
+            Path: '/plans/{planId+}'
+            Method: put
+            RestApiId:
+              Ref: MtnApi
+        DeletePlanEvent:
+          Type: Api
+          Properties:
+            Path: '/plans/{planId+}'
+            Method: delete
+            RestApiId:
+              Ref: MtnApi
 
-  ExampleDataBucket:
-    Type: AWS::S3::Bucket
+  # ... with a log-group is for server-side logs
+  MtnPlansLogGroup:
+    Type: AWS::Logs::LogGroup
     Properties:
-      BucketName: exampleapp-data-store
+      LogGroupName: !Sub "/aws/lambda/${MtnPlansFn}"
+      RetentionInDays: 30
 
-  ExampleClientAppBucketPolicy:
-    Type: AWS::S3::BucketPolicy
-    Properties:
-      Bucket: !Ref ExampleClientAppBucket
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          -
-            Effect: Allow
-            Action: 's3:GetObject'
-            Resource:
-              - !Sub "arn:aws:s3:::${ExampleClientAppBucket}/*"
-            Principal:
-              AWS: !Sub "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${CloudFrontOriginAccessIdentity}"
-
-  CloudFrontOriginAccessIdentity:
-    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
-    Properties:
-      CloudFrontOriginAccessIdentityConfig:
-        Comment: 'Serverless website OA'
-
-  ExampleClientAppBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: exampleapp.thebadsoftwareclub.net
-
-  ExampleAppDistribution:
-    Type: AWS::CloudFront::Distribution
-    Properties:
-      DistributionConfig:
-        Comment: 'Cloudfront distribution for client App'
-        Aliases:
-          - exampleapp.thebadsoftwareclub.net
-        DefaultCacheBehavior:
-          AllowedMethods:
-            - HEAD
-            - GET
-            - OPTIONS
-          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
-          Compress: true
-          SmoothStreaming: false
-          TargetOriginId: exampleapp-client-app
-          ViewerProtocolPolicy: redirect-to-https
-        DefaultRootObject: index.html
-        Enabled: true
-        HttpVersion: http2
-        Logging:
-          Bucket: ''
-          IncludeCookies: false
-          Prefix: ''
-        Origins:
-          - ConnectionAttempts: 3
-            ConnectionTimeout: 10
-            DomainName: !GetAtt ExampleClientAppBucket.DomainName
-            Id: exampleapp-client-app
-            OriginPath: ''
-            OriginShield:
-              Enabled: false
-            S3OriginConfig:
-              OriginAccessIdentity:
-                Fn::Sub: 'origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}'
-        PriceClass: PriceClass_All
-        ViewerCertificate:
-          AcmCertificateArn: arn:aws:acm:us-east-1:822675929081:certificate/16199f7e-0c14-47a7-b348-2e294738b3ba
-          SslSupportMethod: sni-only
-        WebACLId: ''
-
-  ExampleAppClientURL:
-    Type: 'AWS::Route53::RecordSetGroup'
-    Properties:
-      HostedZoneId: Z0608589Z32H3ZBSW3HW
-      RecordSets:
-        - Name: exampleapp.thebadsoftwareclub.net
-          Type: A
-          AliasTarget:
-            HostedZoneId: Z2FDTNDATAQYW2
-            DNSName: !GetAtt
-              - ExampleAppDistribution
-              - DomainName
-
-#  ExampleAppAuthDomain:
-#   ... creating the record set for the cognito auth url is still pending an  outstanding issue and requires a
-#  workaround not included in this example: https://github.com/aws-cloudformation/cloudformation-coverage-roadmap/issues/241
-
-  itemsRole:
+  # ... and permissions for the Lambdas...
+  MtnPlansRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -594,71 +635,7 @@ Resources:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
 
-  itemsFn:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: itemsFn
-      Role: !GetAtt itemsRole.Arn
-      Handler: lambda_function.lambda_handler
-      Runtime: python3.7
-      CodeUri: functions/items/
-      Description: >-
-        items
-      MemorySize: 512
-      Timeout: 10
-      Layers:
-        - arn:aws:lambda:us-west-2:822675929081:layer:dependencies:3
-      Events:
-        ItemsEvent:
-          Type: Api
-          Properties:
-            Path: '/items'
-            Method: get
-            RestApiId:
-              Ref: ExampleApi
-        CreatedByEvent:
-          Type: Api
-          Properties:
-            Path: '/items/createdBy'
-            Method: get
-            RestApiId:
-              Ref: ExampleApi
-        NewItemEvent:
-          Type: Api
-          Properties:
-            Path: '/items'
-            Method: post
-            RestApiId:
-              Ref: ExampleApi
-        GetItemEvent:
-          Type: Api
-          Properties:
-            Path: '/items/{itemId+}'
-            Method: get
-            RestApiId:
-              Ref: ExampleApi
-        PutItemEvent:
-          Type: Api
-          Properties:
-            Path: '/items/{itemId+}'
-            Method: put
-            RestApiId:
-              Ref: ExampleApi
-        DeleteItemEvent:
-          Type: Api
-          Properties:
-            Path: '/items/{itemId+}'
-            Method: delete
-            RestApiId:
-              Ref: ExampleApi
-
-  itemsLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub "/aws/lambda/${itemsFn}"
-      RetentionInDays: 30
-
-  LogGroupPolicy:
+  MtnLogGroupPolicy:
     Type: "AWS::IAM::Policy"
     Properties:
       PolicyName: "allow-lambda-logging"
@@ -671,12 +648,14 @@ Resources:
               - logs:DescribeLogStreams
               - logs:PutLogEvents
             Resource:
-              - "arn:aws:logs:*:822675929081:log-group:/aws/lambda/itemsFn"
-              - "arn:aws:logs:*:822675929081:log-group:/aws/lambda/itemsFn:log-stream:*"
+              - "arn:aws:logs:*:822675929081:log-group:/aws/lambda/MtnPlansFn"
+              - "arn:aws:logs:*:822675929081:log-group:/aws/lambda/MtnPlansFn:log-stream:*"
+              - "arn:aws:logs:*:822675929081:log-group:/aws/lambda/MtnRunsFn"
+              - "arn:aws:logs:*:822675929081:log-group:/aws/lambda/MtnRunsFn:log-stream:*"
       Roles:
-        - !Ref itemsRole
+        - !Ref MtnPlansRole
 
-  DynamoDBPolicy:
+  MtnDynamoDBPolicy:
     Type: "AWS::IAM::Policy"
     Properties:
       PolicyName: "allow-dynamoDB-access"
@@ -709,9 +688,9 @@ Resources:
               - "arn:aws:dynamodb:us-west-2:822675929081:table/items"
               - "arn:aws:dynamodb:*:822675929081:table/items/stream/*"
       Roles:
-        - !Ref itemsRole
+        - !Ref MtnPlansRole
 
-  S3DataStorePolicy:
+  MtnS3DataStorePolicy:
     Type: "AWS::IAM::Policy"
     Properties:
       PolicyName: "allow-datastore-access"
@@ -725,7 +704,100 @@ Resources:
               - s3:ListBucket
               - s3:DeleteObject
             Resource:
-              - "arn:aws:s3:::exampleapp-data-store/*"
-              - "arn:aws:s3:::exampleapp-data-store"
+              - "arn:aws:s3:::mtnapp-data-store/*"
+              - "arn:aws:s3:::mtnapp-data-store"
       Roles:
-        - !Ref itemsRole
+        - !Ref MtnPlansRole
+        -
+
+
+        # A CloudFront Distribution serves the client app, which depends on a URL, Bucket, and Policy
+
+  # The Client-side app is hoisted with a CloudFront Distribution.
+  MtnAppDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: 'Cloudfront distribution for client App'
+        Aliases:
+          - !Ref MtnAppDomain
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - HEAD
+            - GET
+            - OPTIONS
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          Compress: true
+          SmoothStreaming: false
+          TargetOriginId: mtnapp-client-app
+          ViewerProtocolPolicy: redirect-to-https
+        DefaultRootObject: index.html
+        Enabled: true
+        HttpVersion: http2
+        Logging:
+          Bucket: ''
+          IncludeCookies: false
+          Prefix: ''
+        Origins:
+          - ConnectionAttempts: 3
+            ConnectionTimeout: 10
+            DomainName: !GetAtt ExampleClientAppBucket.DomainName
+            Id: mtnapp-client-app
+            OriginPath: ''
+            OriginShield:
+              Enabled: false
+            S3OriginConfig:
+              OriginAccessIdentity:
+                Fn::Sub: 'origin-access-identity/cloudfront/${MtnCloudFrontOriginAccessIdentity}'
+        PriceClass: PriceClass_All
+        ViewerCertificate:
+          AcmCertificateArn: !Ref RootCertificateArn
+          SslSupportMethod: sni-only
+        WebACLId: ''
+
+
+  # ... which depends on having a bucket for staging, a URL, and a Policy
+  MtnAppClientURL:
+    Type: 'AWS::Route53::RecordSetGroup'
+    Properties:
+      HostedZoneId: !Ref RootHostedZone
+      RecordSets:
+        - Name: !Ref MtnAppDomain
+          Type: A
+          AliasTarget:
+            HostedZoneId: !Ref CfHostedZone
+            DNSName: !GetAtt
+              - ExampleAppDistribution
+              - DomainName
+
+  MtnClientAppBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref MtnAppDomain
+
+  MtnClientAppBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ExampleClientAppBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: 's3:GetObject'
+            Resource:
+              - !Sub "arn:aws:s3:::${MtnClientAppBucket}/*"
+            Principal:
+              AWS: !Sub "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${MtnCloudFrontOriginAccessIdentity}"
+
+    MtnCloudFrontOriginAccessIdentity:
+      Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+      Properties:
+        CloudFrontOriginAccessIdentityConfig:
+          Comment: 'Serverless website OA'
+
+
+
+
+
+
+
