@@ -4,7 +4,7 @@ const awsmobile = {
     "aws_user_pools_id": `${process.env.REACT_APP_AWS_REGION}_${process.env.REACT_APP_AWS_USERPOOLID}`,
     "aws_user_pools_web_client_id": `${process.env.REACT_APP_AWS_USERPOOLCLIENTID}`,
     "oauth": {
-        "domain": `${process.env.REACT_APP_AWS_USERPOOLDOMAIN}`,
+        "domain": `${process.env.REACT_APP_AUTH_DOMAIN}`,
         "scope": [
             "email",
             "openid",
