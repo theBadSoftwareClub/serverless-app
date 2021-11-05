@@ -36,6 +36,14 @@ Resources:
           Name: email
           Required: false
 
+  ExampleUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      UserPoolId: !Ref ExampleUserPool
+      Domain: "exampleauth.thebadsoftwareclub.net"
+      CustomDomainConfig:
+        CertificateArn: arn:aws:acm:us-east-1:822675929081:certificate/16199f7e-0c14-47a7-b348-2e294738b3ba
+
   ExampleUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:
@@ -491,11 +499,6 @@ Resources:
     Properties:
       BucketName: exampleapp-data-store
 
-  ExampleClientAppBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: exampleapp.thebadsoftwareclub.net
-
   ExampleClientAppBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
@@ -516,6 +519,11 @@ Resources:
     Properties:
       CloudFrontOriginAccessIdentityConfig:
         Comment: 'Serverless website OA'
+
+  ExampleClientAppBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: exampleapp.thebadsoftwareclub.net
 
   ExampleAppDistribution:
     Type: AWS::CloudFront::Distribution

@@ -27,7 +27,7 @@ const useStyles = makeStyles((app_theme) => ({
 
 const NewItem = ({ newItem }) => {
   const [body, setBody] = useState();
-  const [title, setTitle] = useState();
+  const [title, setTitle] = useState("Title");
   const [validationfeedback, setValidationFeedback] = useState();
   const [newitemopen, setNewItemOpen] = useState(false);
   const classes = useStyles();

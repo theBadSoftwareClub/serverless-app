@@ -37,8 +37,32 @@ const Item = ({ item, token, onChange,deleteItem,updateItem }) => {
 
   async function fetchItemNew() {
         console.log('fetching item: ', item.itemId)
-        console.log('url:', process.env.REACT_APP_API_URL)
+        console.log('api url:', process.env.REACT_APP_API_URL)
+      if (typeof token != 'undefined') {
+            // make the the request with fetch
+            let url = encodeURI(`${process.env.REACT_APP_API_URL}/items/${item.itemId}`)
+            console.log(url)
+            const response = await fetch(url, {
+                headers: {
+                    Authorization: `${token}`,
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                redirect: 'follow'
+            });
 
+            // handle the followup with another await
+            const res = await response
+                .json()
+                .then((json) => {
+                    // work here with the json response object
+                    console.log('plan results: ', json)
+                    setBody(json)
+                    setFormattedBody(JSON.stringify(json, undefined, 2))
+
+                })
+                .catch((err) => console.log(err));
+        }
     };
 
   const handleDialogClose = () => {

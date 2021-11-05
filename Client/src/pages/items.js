@@ -74,8 +74,7 @@ const Items = () => {
     const resp = await fetch(url, {
       method: 'POST',
       headers: {
-        Authorization: `${token}`,
-        'Content-Disposition': 'filename=testName',
+        Authorization: `${token}`
         },
       body: body,
       redirect: 'follow'

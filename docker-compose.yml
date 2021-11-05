@@ -22,5 +22,6 @@ services:
     environment:
       REACT_APP_API_URL: 'https://exampleapi.thebadsoftwareclub.net'
     volumes:
+      - ./Client/src:/usr/src/app/src
       - ./Client/build:/usr/src/app/build
     command: npm run build

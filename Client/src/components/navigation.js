@@ -199,7 +199,7 @@ const Navigation = () => {
               <MenuIcon />
             </IconButton>
             <Typography variant="h6" className={classes.title}>
-              Clearly A Differernt Title
+              Example Application
             </Typography>
             <>
             {authState === AuthState.SignedIn && user ? (
