@@ -95,7 +95,7 @@ def lambda_handler(event, context):
                 Body=bytes(json.dumps(json.loads(event['body'])).encode('UTF-8')),
                 Metadata={'createdBy': userid},
                 Bucket='exampleapp-data-store',
-                Key='pre_' + event['pathParameters']['planId']
+                Key='pre_' + event['pathParameters']['itemId']
             )
 
             dynamokey = {'itemId': event['pathParameters']['itemId'],
@@ -105,7 +105,7 @@ def lambda_handler(event, context):
                 ':t': event['queryStringParameters']['title']
             }
 
-            updateexpression = "set planTitle=:t"
+            updateexpression = "set itemTitle=:t"
 
             results = table.update_item(Key=dynamokey, UpdateExpression=updateexpression,
                                         ExpressionAttributeValues=expressionattributes, ReturnConsumedCapacity="TOTAL")
