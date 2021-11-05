@@ -1,17 +1,17 @@
 const awsmobile = {
-    "aws_project_region": "us-west-2",
-    "aws_cognito_region": "us-west-2",
-    "aws_user_pools_id": "us-west-2_r2ZIrzDVd",
-    "aws_user_pools_web_client_id": "6nbmjlj7bdoc3d2lf6n316n8t3",
+    "aws_project_region": `${process.env.REACT_APP_AWS_REGION}`,
+    "aws_cognito_region": `${process.env.REACT_APP_AWS_REGION}`,
+    "aws_user_pools_id": `${process.env.REACT_APP_AWS_REGION}_${process.env.REACT_APP_AWS_USERPOOLID}`,
+    "aws_user_pools_web_client_id": `${process.env.REACT_APP_AWS_USERPOOLCLIENTID}`,
     "oauth": {
-        "domain": "exampleauth.thebadsoftwareclub.net",
+        "domain": `${process.env.REACT_APP_AWS_USERPOOLDOMAIN}`,
         "scope": [
             "email",
             "openid",
             "profile"
         ],
-        "redirectSignIn": "http://exampleapp.thebadsoftwareclub.net/",
-        "redirectSignOut": "http://exampleapp.thebadsoftwareclub.net/",
+        "redirectSignIn": `${process.env.REACT_APP_APP_URL}`,
+        "redirectSignOut": `${process.env.REACT_APP_APP_URL}`,
         "responseType": "token"
     },
     "federationTarget": "COGNITO_USER_POOLS"
