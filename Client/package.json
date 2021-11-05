@@ -27,8 +27,9 @@
     "prettier": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "react-router-dom": "latest",
+    "react-router-dom": "5.2.0",
     "react-scripts": "latest",
+    "json-to-pretty-yaml": "latest"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -40,8 +41,6 @@
   "eslintConfig": {
     "extends": "react-app"
   },
-  "proxy": "https://exampleapi.thebadsoftwareclub.net/",
-  "secure": false,
   "watch": {
     "start": "{src,src/components}/*.js"
   },

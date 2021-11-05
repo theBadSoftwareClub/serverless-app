@@ -12,7 +12,7 @@ import {
   ListItem,
   Modal
 } from '@material-ui/core';
-import { NavLink as RouterNavLink } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import FlagIcon from '@material-ui/icons/Flag';
 import MenuIcon from '@material-ui/icons/Menu';
@@ -118,12 +118,12 @@ const Navigation = () => {
   async function testServer() {
 
       if ((user !== undefined ) && (user !== null )) {
-          console.log('testing server: ', user.signInUserSession.idToken.jwtToken)
 
-
+          let url = encodeURI(`${process.env.REACT_APP_API_URL}/`)
           let token = user.signInUserSession.idToken.jwtToken
+          console.log('testing server: ', url)
           // make the the request with fetch
-          const response = await fetch(`/`, {
+          const response = await fetch(url, {
               redirect: 'follow',
               headers: {
                   Authorization: `${token}`,
@@ -199,7 +199,7 @@ const Navigation = () => {
               <MenuIcon />
             </IconButton>
             <Typography variant="h6" className={classes.title}>
-              Example Application
+              Clearly A Differernt Title
             </Typography>
             <>
             {authState === AuthState.SignedIn && user ? (
@@ -280,7 +280,7 @@ const Navigation = () => {
             <ListItem
               button
               key="items"
-              component={RouterNavLink} to="/items"
+              component={Link} to="/items"
               user={user}
               onClick={handleDrawerClose}
             >
@@ -293,7 +293,7 @@ const Navigation = () => {
             <ListItem
               button
               key="home"
-              component={RouterNavLink} to="/"
+              component={Link} to="/"
               onClick={handleDrawerClose}
             >
                 <ListItemIcon>

@@ -76,8 +76,14 @@ def lambda_handler(event, context):
                         s3_response['ResponseMetadata']['HTTPStatusCode'] in [200, 204]:
                     response = {
                         "statusCode": 200,
-                        "body": "delete complete"
+                        "body": "delete complete",
+                        "headers": {
+                            "Access-Control-Allow-Headers": "Content-Type",
+                            "Access-Control-Allow-Origin": "*",
+                            "Access-Control-Allow-Methods": "GET"
+                        }
                     }
+
                     return response
 
             else:
@@ -106,7 +112,12 @@ def lambda_handler(event, context):
 
             response = {
                 "statusCode": 200,
-                "body": json.dumps(results)
+                "body": json.dumps(results),
+                "headers": {
+                    "Access-Control-Allow-Headers": "Content-Type",
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "GET"
+                }
             }
 
             return response
@@ -134,7 +145,12 @@ def lambda_handler(event, context):
 
             response = {
                 "statusCode": 200,
-                "body": json.dumps(results)
+                "body": json.dumps(results),
+                "headers": {
+                    "Access-Control-Allow-Headers": "Content-Type",
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "GET"
+                }
             }
 
             return response
@@ -150,7 +166,12 @@ def lambda_handler(event, context):
                 # print('response: ', response )
                 response = {
                     "statusCode": 200,
-                    "body": json.dumps(results)
+                    "body": json.dumps(results),
+                    "headers": {
+                        "Access-Control-Allow-Headers": "Content-Type",
+                        "Access-Control-Allow-Origin": "*",
+                        "Access-Control-Allow-Methods": "GET"
+                    }
                 }
 
                 return response
@@ -167,12 +188,22 @@ def lambda_handler(event, context):
 
                 response = {
                     "statusCode": 200,
-                    "body": document
+                    "body": document,
+                    "headers": {
+                        "Access-Control-Allow-Headers": "Content-Type",
+                        "Access-Control-Allow-Origin": "*",
+                        "Access-Control-Allow-Methods": "GET"
+                    }
                 }
                 return response
             else:
                 response = {
-                    "statusCode": 200
+                    "statusCode": 200,
+                    "headers": {
+                        "Access-Control-Allow-Headers": "Content-Type",
+                        "Access-Control-Allow-Origin": "*",
+                        "Access-Control-Allow-Methods": "GET"
+                    }
                 }
                 return response
         return respond(None, operations[operation](dynamo, payload))

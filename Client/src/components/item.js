@@ -35,33 +35,9 @@ const Item = ({ item, token, onChange,deleteItem,updateItem }) => {
   const classes = useStyles();
 
 
-  async function fetchItem() {
+  async function fetchItemNew() {
         console.log('fetching item: ', item.itemId)
-
-        if (typeof token != 'undefined') {
-            // make the the request with fetch
-
-            let url = encodeURI(`${process.env.REACT_APP_API_URL}items/${item.itemId}`)
-            const response = await fetch(url, {
-                headers: {
-                    Authorization: `${token}`,
-                    Accept: 'application/json',
-                    'Content-Type': 'application/json',
-                },
-            });
-
-            // handle the followup with another await
-            const res = await response
-                .json()
-                .then((json) => {
-                    // work here with the json response object
-                    console.log('plan results: ', json)
-                    setBody(json)
-                    setFormattedBody(JSON.stringify(json, undefined, 2))
-
-                })
-                .catch((err) => console.log(err));
-        }
+        console.log('url:', process.env.REACT_APP_API_URL)
 
     };
 
@@ -106,7 +82,7 @@ const Item = ({ item, token, onChange,deleteItem,updateItem }) => {
     };
 
   useEffect(() => {
-        fetchItem()
+        fetchItemNew()
     }, []);
 
   return (

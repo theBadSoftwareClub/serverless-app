@@ -7,7 +7,7 @@ services:
       - 3000
     environment:
       CHOKIDAR_USEPOLLING: 'true'
-      REACT_APP_API_URL: 'http://localhost/'
+      REACT_APP_API_URL: 'https://exampleapi.thebadsoftwareclub.net'
     ports:
       - 80:3000
     volumes:
@@ -19,8 +19,8 @@ services:
     build: ./Client
     depends_on:
       - development
-    env_file:
-      - ./.env.prod
+    environment:
+      REACT_APP_API_URL: 'https://exampleapi.thebadsoftwareclub.net'
     volumes:
       - ./Client/build:/usr/src/app/build
     command: npm run build

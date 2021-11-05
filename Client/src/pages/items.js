@@ -30,11 +30,11 @@ const Items = () => {
 
 
   async function fetchItems() {
-
+    console.log('fetch')
     if (typeof token != 'undefined') {
       // make the the request with fetch
       console.log(process.env.REACT_APP_API_URL)
-      let url = process.env.REACT_APP_API_URL+'items/createdBy'
+      let url = encodeURI(`${process.env.REACT_APP_API_URL}/items/createdBy`)
       console.log(url)
       const response = await fetch(url, {
         headers: {
@@ -68,7 +68,7 @@ const Items = () => {
   };
 
   async function newItem(title, body ) {
-    let url = encodeURI(`${process.env.REACT_APP_API_URL}items?title=${title}`)
+    let url = encodeURI(`${process.env.REACT_APP_API_URL}/items?title=${title}`)
     console.log('url: ', url)
 
     const resp = await fetch(url, {
@@ -95,7 +95,7 @@ const Items = () => {
 
   async function deleteItem(itemId){
 
-    let url = encodeURI(`${process.env.REACT_APP_API_URL}items/${itemId}`)
+    let url = encodeURI(`${process.env.REACT_APP_API_URL}/items/${itemId}`)
 
     if (typeof token != 'undefined') {
       // make the the request with fetch
@@ -125,7 +125,7 @@ const Items = () => {
   async function updateItem(itemId, title, body ) {
 
 
-    let url = encodeURI(`${process.env.REACT_APP_API_URL}items/${itemId}?title=${title}`)
+    let url = encodeURI(`${process.env.REACT_APP_API_URL}/items/${itemId}?title=${title}`)
 
     console.log('updating: ', itemId, title, body )
 
@@ -158,8 +158,6 @@ const Items = () => {
       setIsLoading(true);
 
   };
-
-
 
   useEffect(() => {
   Auth.currentAuthenticatedUser()
