@@ -1,8 +1,0 @@
-{
-  "httpMethod": "POST",
-  "requestContext": {"authorizer": {"claims": {"sub": "3da69f28-02c5-4740-b0db-f253d926dca7"}}},
-  "queryStringParameters": {
-    "planId":"541f42db-f32b-4b8c-9940-0d6840075f33",
-    "dry": false
-  }
-}
