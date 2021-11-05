@@ -26,6 +26,7 @@ An Example of Leveraging AWS to host a Simple, scalable web Application
 When the Docker services are running, a development server will be running at localhost and a production-ready build will be available in Client/build
 
 To re-run the build with the most recent changes: *docker run production*
+
 To push the build up to AWS: *aws s3 sync ./Client/build s3://exampleapp.root.domain.com --delete*  
 
 
