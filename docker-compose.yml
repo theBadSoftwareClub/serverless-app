@@ -12,8 +12,7 @@ services:
       REACT_APP_AUTH_DOMAIN: 'exampleauth.domainname.net'
       REACT_APP_AWS_REGION: 'us-east-1'
       REACT_APP_AWS_USERPOOLID: ''
-      REACT_APP_AWS_USERPOOLCLIENTID: '
-
+      REACT_APP_AWS_USERPOOLCLIENTID: ''
     ports:
       - 80:3000
     volumes:
@@ -32,8 +31,7 @@ services:
       REACT_APP_AUTH_DOMAIN: 'exampleauth.domainname.net'
       REACT_APP_AWS_REGION: 'us-east-1'
       REACT_APP_AWS_USERPOOLID: ''
-      REACT_APP_AWS_USERPOOLCLIENTID: '
-
+      REACT_APP_AWS_USERPOOLCLIENTID: ''
     volumes:
       - ./Client/src:/usr/src/app/src
       - ./Client/public:/usr/src/app/public
