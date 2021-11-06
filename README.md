@@ -16,7 +16,7 @@ An Example of Leveraging AWS to host a Simple, scalable web Application
 1. Clone Repo
 2. Open up the SAM template at Serverless\template.yaml
    - substitute the default values for parameters at the top of the template:
-     - A Root Domain (already registered in AWS)
+     - A #Root Domain# (already registered in AWS)
      - An AWS Account ID (numerical ID identifying the root account id in the certificate ARN)
      - An id for a certificate stored in ACM (CloudFront requires this cert to be in the us-east-1 Region)
      - The Hosted Zone ID for the Root Domain
