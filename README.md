@@ -14,16 +14,16 @@ An Example of Leveraging AWS to host a Simple, scalable web Application
 # Getting Started
 
 1. Clone Repo
-2. Open up the SAM template at Serverless\template.yaml and complete the parameters:
+3. Open up the SAM template at Serverless\template.yaml and complete the parameters:
      - **Root Domain**: the top level domain name already registered in AWS
      - **AWS Account Id**: numerical Id of the account used in the certificate ARN
      - **Certificate Id**: alphanumerical Id for an ssl cert stored in ACM (CloudFront requires this cert to be in the us-east-1 Region)
      - **Hosted Zone Id**: for the Root Domain
      - **Domain Names**: for the Application, Auth Service, and API
      - **CfHostedZoneId**, which can keep its value, (unless the value specified in the AWS doc has changed: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-aliastarget.html)
-3. (optional) Update the functions in the Template to include an existing dependencies layer or make a new one from functions/dependencies
-4. Deploy Serverless App to AWS with SAM CLI (or IDE plugins)
-5. make the A record in Route 53 for the auth domain. (This is only required untill this roadmap issue is resolved: https://github.com/aws-cloudformation/cloudformation-coverage-roadmap/issues/241) The value can be located by looking for the app domain settings under the Cognito user pool in the console
+4. (optional) Update the functions in the Template to include an existing dependencies layer or make a new one from functions/dependencies
+5. Deploy Serverless App to AWS with SAM CLI (or IDE plugins)
+6. make the A record in Route 53 for the auth domain. (This is only required untill this roadmap issue is resolved: https://github.com/aws-cloudformation/cloudformation-coverage-roadmap/issues/241) The value can be located by looking for the app domain settings under the Cognito user pool in the console
 
 Now the Serverless App should be functioning in AWS, but there is not a Client-Side App yet, for that we will use a React App:
 
