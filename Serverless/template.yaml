@@ -8,17 +8,21 @@ Parameters:
     Type: String
     Default: "thebadsoftwareclub.net"
 
-  RootCertificateArn:
+  AwsAccountId:
     Type: String
-    Default: "arn:aws:acm:us-east-1:822675929081:certificate/16199f7e-0c14-47a7-b348-2e294738b3ba"
+    Default: "822675929081"
+
+  AcmCertificateId:
+    Type: String
+    Default: "16199f7e-0c14-47a7-b348-2e294738b3ba"
 
   RootHostedZone:
     Type: String
     Default: "Z0608589Z32H3ZBSW3HW"
 
-  CfHostedZone:
+  MtnFuzzAppDomain:
     Type: String
-    Default: "Z2FDTNDATAQYW2"
+    Default: "mtnfuzz"
 
   MtnFuzzAuthDomain:
     Type: String
@@ -28,9 +32,11 @@ Parameters:
     Type: String
     Default: "mtnfuzzapi"
 
-  MtnFuzzAppDomain:
+  CfHostedZone:
     Type: String
-    Default: "mtnfuzz"
+    Default: "Z2FDTNDATAQYW2"
+
+
 
 
 Resources:
@@ -89,18 +95,18 @@ Resources:
       UserPoolId: !Ref MtnFuzzUserPool
       Domain: !Sub "${MtnFuzzAuthDomain}.${RootDomain}"
       CustomDomainConfig:
-        CertificateArn: !Ref RootCertificateArn
+        CertificateArn: !Sub "arn:aws:acm:us-east-1:${AwsAccountId}:certificate/${AcmCertificateId}"
 
         #   ... creating the record set for the cognito auth url is still pending an  outstanding issue and requires a
         #  workaround not included in this example: https://github.com/aws-cloudformation/cloudformation-coverage-roadmap/issues/241
 
-  # The Data Bucket is for Object Storage
+  # The Data Bucket is in S3 for Object Storage
   MtnFuzzDataBucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: mtnfuzz-data-store
 
-  # DynamoDB Tables are for key-value data (application indexes)
+  # DynamoDB Tables are for key-value data
   MtnFuzzPlansTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -139,7 +145,7 @@ Resources:
     Properties:
       Domain:
         DomainName: !Sub "${MtnFuzzApiDomain}.${RootDomain}"
-        CertificateArn: !Ref RootCertificateArn
+        CertificateArn: !Sub "arn:aws:acm:us-east-1:${AwsAccountId}:certificate/${AcmCertificateId}"
         EndpointConfiguration: EDGE
         Route53:
           HostedZoneId: !Ref RootHostedZone
@@ -749,7 +755,7 @@ Resources:
             RestApiId:
               Ref: MtnFuzzApi
 
-  # ... with a log-group is for server-side logs
+  # ... with a log-group for server-side logs
   MtnFuzzPlansLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -762,7 +768,7 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${MtnFuzzRunsFn}"
       RetentionInDays: 30
 
-  # ... and permissions for the Lambdas...
+  # ... and permissions for the Lambdas
   MtnFuzzPlansRole:
     Type: AWS::IAM::Role
     Properties:
@@ -850,8 +856,7 @@ Resources:
       Roles:
         - !Ref MtnFuzzPlansRole
 
-  # The Client-side app is hoisted with a CloudFront Distribution.
-
+  # The Client-side app is hosted with a CloudFront Distribution.
   MtnFuzzAppDistribution:
     Type: AWS::CloudFront::Distribution
     Properties:
@@ -889,7 +894,7 @@ Resources:
                 Fn::Sub: 'origin-access-identity/cloudfront/${MtnFuzzCloudFrontOriginAccessIdentity}'
         PriceClass: PriceClass_All
         ViewerCertificate:
-          AcmCertificateArn: !Ref RootCertificateArn
+          AcmCertificateArn: !Sub "arn:aws:acm:us-east-1:${AwsAccountId}:certificate/${AcmCertificateId}"
           SslSupportMethod: sni-only
         WebACLId: ''
 
