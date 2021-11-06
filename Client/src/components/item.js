@@ -40,7 +40,7 @@ const Item = ({ item, token, onChange,deleteItem,updateItem }) => {
         console.log('api url:', process.env.REACT_APP_API_URL)
       if (typeof token != 'undefined') {
             // make the the request with fetch
-            let url = encodeURI(`${process.env.REACT_APP_API_URL}/items/${item.itemId}`)
+            let url = encodeURI(`https://${process.env.REACT_APP_API_Domain}.${process.env.REACT_APP_ROOT_Domain}/items/${item.itemId}`)
             console.log(url)
             const response = await fetch(url, {
                 headers: {

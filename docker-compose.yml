@@ -7,12 +7,13 @@ services:
       - 3000
     environment:
       CHOKIDAR_USEPOLLING: 'true'
-      REACT_APP_APP_URL: 'https://exampleapp.domainname.net'
-      REACT_APP_API_URL: 'https://exampleapi.domainname.net'
-      REACT_APP_AUTH_DOMAIN: 'exampleauth.domainname.net'
-      REACT_APP_AWS_REGION: 'us-east-1'
-      REACT_APP_AWS_USERPOOLID: ''
-      REACT_APP_AWS_USERPOOLCLIENTID: ''
+      REACT_APP_ROOT_DOMAIN: 'thebadsoftwareclub.net'
+      REACT_APP_APP_DOMAIN: 'mtnfuzz'
+      REACT_APP_API_DOMAIN: 'mtnfuzzapi'
+      REACT_APP_AUTH_DOMAIN: 'mtnfuzzauth'
+      REACT_APP_AWS_REGION: 'us-west-2'
+      REACT_APP_AWS_USERPOOLID: 'frOxAogmV'
+      REACT_APP_AWS_USERPOOLCLIENTID: '7qpr7i4fe7l7t7aishfq1bagrc'
     ports:
       - 80:3000
     volumes:
@@ -26,12 +27,13 @@ services:
     depends_on:
       - development
     environment:
-      REACT_APP_APP_URL: 'https://exampleapp.domainname.net'
-      REACT_APP_API_URL: 'https://exampleapi.domainname.net'
-      REACT_APP_AUTH_DOMAIN: 'exampleauth.domainname.net'
-      REACT_APP_AWS_REGION: 'us-east-1'
-      REACT_APP_AWS_USERPOOLID: ''
-      REACT_APP_AWS_USERPOOLCLIENTID: ''
+      REACT_APP_ROOT_DOMAIN: 'thebadsoftwareclub.net'
+      REACT_APP_APP_DOMAIN: 'mtnfuzz'
+      REACT_APP_API_DOMAIN: 'mtnfuzzapi'
+      REACT_APP_AUTH_DOMAIN: 'mtnfuzzauth'
+      REACT_APP_AWS_REGION: 'us-west-2'
+      REACT_APP_AWS_USERPOOLID: 'frOxAogmV'
+      REACT_APP_AWS_USERPOOLCLIENTID: '7qpr7i4fe7l7t7aishfq1bagrc'
     volumes:
       - ./Client/src:/usr/src/app/src
       - ./Client/public:/usr/src/app/public
