@@ -10,7 +10,7 @@ Parameters:
 
   AwsAccountId:
     Type: String
-    Default: "822675929081"
+    Default: ""
 
   AwsDefaultRegion:
     Type: String
@@ -18,11 +18,11 @@ Parameters:
 
   AcmCertificateId:
     Type: String
-    Default: "16199f7e-0c14-47a7-b348-2e294738b3ba"
+    Default: ""
 
   RootHostedZone:
     Type: String
-    Default: "Z0608589Z32H3ZBSW3HW"
+    Default: ""
 
   AppDomain:
     Type: String
