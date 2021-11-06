@@ -12,6 +12,10 @@ Parameters:
     Type: String
     Default: "822675929081"
 
+  AwsDefaultRegion:
+    Type: String
+    Default: "us-west-2"
+
   AcmCertificateId:
     Type: String
     Default: "16199f7e-0c14-47a7-b348-2e294738b3ba"
@@ -22,15 +26,15 @@ Parameters:
 
   MtnFuzzAppDomain:
     Type: String
-    Default: "mtnfuzz"
+    Default: "exampleapp"
 
   MtnFuzzAuthDomain:
     Type: String
-    Default: "mtnfuzzauth"
+    Default: "exampleauth"
 
   MtnFuzzApiDomain:
     Type: String
-    Default: "mtnfuzzapi"
+    Default: "exampleapi"
 
   CfHostedZone:
     Type: String
@@ -39,7 +43,7 @@ Parameters:
 Resources:
 
   # The Cognito User Pool, Client, and Domain are for the Authentication Service
-  MtnFuzzUserPool:
+  ExampleUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
       UserPoolName: mtnfuzzusers
@@ -63,11 +67,11 @@ Resources:
           Name: email
           Required: false
 
-  MtnFuzzUserPoolClient:
+  ExampleUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:
-      UserPoolId: !Ref MtnFuzzUserPool
-      ClientName: MtnFuzzUserPoolClient
+      UserPoolId: !Ref ExampleUserPool
+      ClientName: ExampleUserPoolClient
       GenerateSecret: false
       AllowedOAuthFlows:
         - implicit
@@ -77,7 +81,7 @@ Resources:
         - email
         - profile
       CallbackURLs:
-        - !Sub "https://${MtnFuzzAppDomain}.${RootDomain}"
+        - !Sub "https://${ExampleAppDomain}.${RootDomain}"
       ExplicitAuthFlows:
         - ALLOW_REFRESH_TOKEN_AUTH
         - ALLOW_USER_PASSWORD_AUTH
@@ -86,11 +90,11 @@ Resources:
       SupportedIdentityProviders:
         - COGNITO
 
-  MtnFuzzUserPoolDomain:
+  ExampleUserPoolDomain:
     Type: AWS::Cognito::UserPoolDomain
     Properties:
-      UserPoolId: !Ref MtnFuzzUserPool
-      Domain: !Sub "${MtnFuzzAuthDomain}.${RootDomain}"
+      UserPoolId: !Ref ExampleUserPool
+      Domain: !Sub "${ExampleAuthDomain}.${RootDomain}"
       CustomDomainConfig:
         CertificateArn: !Sub "arn:aws:acm:us-east-1:${AwsAccountId}:certificate/${AcmCertificateId}"
 
@@ -98,50 +102,34 @@ Resources:
         #  workaround not included in this example: https://github.com/aws-cloudformation/cloudformation-coverage-roadmap/issues/241
 
   # The Data Bucket is in S3 for Object Storage
-  MtnFuzzDataBucket:
+  ExampleDataBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: mtnfuzz-data-store
+      BucketName: example-data-store
 
   # DynamoDB Tables are for key-value data
-  MtnFuzzPlansTable:
+  ExampleItemsTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: mtnfuzzplans
+      TableName: exampleplans
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: createdBy
           AttributeType: S
-        - AttributeName: planId
+        - AttributeName: itemId
           AttributeType: S
       KeySchema:
-        - AttributeName: planId
+        - AttributeName: itemId
           KeyType: HASH
         - AttributeName: createdBy
-          KeyType: RANGE
-
-  MtnFuzzRunsTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName: mtnfuzzruns
-      BillingMode: PAY_PER_REQUEST
-      AttributeDefinitions:
-        - AttributeName: planId
-          AttributeType: S
-        - AttributeName: runId
-          AttributeType: S
-      KeySchema:
-        - AttributeName: planId
-          KeyType: HASH
-        - AttributeName: runId
           KeyType: RANGE
 
   # The Api and Lambda Functions make up the server-side functionality
-  MtnFuzzApi:
+  ExampleApi:
     Type: AWS::Serverless::Api
     Properties:
       Domain:
-        DomainName: !Sub "${MtnFuzzApiDomain}.${RootDomain}"
+        DomainName: !Sub "${ExampleApiDomain}.${RootDomain}"
         CertificateArn: !Sub "arn:aws:acm:us-east-1:${AwsAccountId}:certificate/${AcmCertificateId}"
         EndpointConfiguration: EDGE
         Route53:
@@ -149,21 +137,21 @@ Resources:
 
       Auth:
         Authorizers:
-          MtnFuzzAuth:
+          ExampleAuth:
             AuthorizationScopes:
               - email
               - openid
-            UserPoolArn: !GetAtt MtnFuzzUserPool.Arn
+            UserPoolArn: !GetAtt ExampleUserPool.Arn
             Identity:
               Header: Authorization
       StageName: Prod
       DefinitionBody:
         openapi: "3.0.1"
         info:
-          title: "MtnFuzzApi"
+          title: "ExampleApi"
           version: "1.0"
         servers:
-          - url:  !Sub "https://${MtnFuzzApiDomain}.${RootDomain}"
+          - url:  !Sub "https://${ExampleApiDomain}.${RootDomain}"
         paths:
           /:
             get:
@@ -245,7 +233,7 @@ Resources:
                   application/json: "{\"statusCode\": 200}"
                 passthroughBehavior: "when_no_match"
                 type: "mock"
-          /plans:
+          /items:
             get:
               responses:
                 "200":
@@ -259,10 +247,10 @@ Resources:
                       schema:
                         $ref: "#/components/schemas/Empty"
               security:
-                - MtnFuzzAuth: [ ]
+                - ExampleAuth: [ ]
               x-amazon-apigateway-integration:
                 httpMethod: "POST"
-                uri: "arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:822675929081:function:MtnFuzzPlansFn/invocations"
+                uri: !Sub "arn:aws:apigateway:${AwsDefaultRegion}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AwsDefaultRegion}:${AwsAccountId}:function:ExampleItemsFn/invocations"
                 responses:
                   default:
                     statusCode: "200"
@@ -284,10 +272,10 @@ Resources:
                       schema:
                         $ref: "#/components/schemas/Empty"
               security:
-                - MtnFuzzAuth: [ ]
+                - Example: [ ]
               x-amazon-apigateway-integration:
                 httpMethod: "POST"
-                uri: "arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:822675929081:function:MtnFuzzPlansFn/invocations"
+                uri: !Sub "arn:aws:apigateway:${AwsDefaultRegion}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AwsDefaultRegion}:${AwsAccountId}:function:ExampleItemsFn/invocations"
                 responses:
                   default:
                     statusCode: "200"
@@ -325,7 +313,7 @@ Resources:
                   application/json: "{\n  \"statusCode\" : 200\n}\n"
                 passthroughBehavior: "when_no_match"
                 type: "mock"
-          /plans/createdBy:
+          /items/createdBy:
             get:
               responses:
                 "200":
@@ -342,7 +330,7 @@ Resources:
                 - MtnFuzzAuth: [ ]
               x-amazon-apigateway-integration:
                 httpMethod: "POST"
-                uri: "arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:822675929081:function:MtnFuzzPlansFn/invocations"
+                uri: !Sub "arn:aws:apigateway:${AwsDefaultRegion}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AwsDefaultRegion}:${AwsAccountId}:function:ExampleItemsFn/invocations"
                 responses:
                   default:
                     statusCode: "200"
@@ -381,10 +369,10 @@ Resources:
                   application/json: "{\"statusCode\": 200}"
                 passthroughBehavior: "when_no_match"
                 type: "mock"
-          /plans/{planId+}:
+          /items/{itemId+}:
             get:
               parameters:
-                - name: "planId"
+                - name: "itemId"
                   in: "path"
                   required: true
                   schema:
@@ -404,7 +392,7 @@ Resources:
                 - exampleAuth: [ ]
               x-amazon-apigateway-integration:
                 httpMethod: "POST"
-                uri: "arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:822675929081:function:MtnFuzzPlansFn/invocations"
+                uri: !Sub "arn:aws:apigateway:${AwsDefaultRegion}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AwsDefaultRegion}:${AwsAccountId}:function:ExampleItemsFn/invocations"
                 responses:
                   default:
                     statusCode: "200"
@@ -413,12 +401,12 @@ Resources:
                 passthroughBehavior: "when_no_match"
                 cacheNamespace: "15yjo6"
                 cacheKeyParameters:
-                  - "method.request.path.planId"
+                  - "method.request.path.itemId"
                 contentHandling: "CONVERT_TO_TEXT"
                 type: "aws_proxy"
             put:
               parameters:
-                - name: "planId"
+                - name: "itemId"
                   in: "path"
                   required: true
                   schema:
@@ -438,7 +426,7 @@ Resources:
                 - exampleAuth: [ ]
               x-amazon-apigateway-integration:
                 httpMethod: "POST"
-                uri: "arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:822675929081:function:MtnFuzzPlansFn/invocations"
+                uri: !Sub "arn:aws:apigateway:${AwsDefaultRegion}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AwsDefaultRegion}:${AwsAccountId}:function:ExampleItemsFn/invocations"
                 responses:
                   default:
                     statusCode: "200"
@@ -452,7 +440,7 @@ Resources:
                 type: "aws_proxy"
             delete:
               parameters:
-                - name: "planId"
+                - name: "itemId"
                   in: "path"
                   required: true
                   schema:
@@ -472,7 +460,7 @@ Resources:
                 - MtnFuzzAuth: [ ]
               x-amazon-apigateway-integration:
                 httpMethod: "POST"
-                uri: "arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:822675929081:function:MtnFuzzPlansFn/invocations"
+                uri: !Sub "arn:aws:apigateway:${AwsDefaultRegion}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AwsDefaultRegion}:${AwsAccountId}:function:ExampleItemsFn/invocations"
                 responses:
                   default:
                     statusCode: "200"
@@ -481,7 +469,7 @@ Resources:
                 passthroughBehavior: "when_no_match"
                 cacheNamespace: "15yjo6"
                 cacheKeyParameters:
-                  - "method.request.path.planId"
+                  - "method.request.path.itemId"
                 contentHandling: "CONVERT_TO_TEXT"
                 type: "aws_proxy"
             options:
@@ -520,155 +508,12 @@ Resources:
                   application/json: "{\"statusCode\": 200}"
                 passthroughBehavior: "when_no_match"
                 type: "mock"
-          /runs:
-            get:
-              responses:
-                "200":
-                  description: "200 response"
-                  headers:
-                    Access-Control-Allow-Origin:
-                      schema:
-                        type: "string"
-                  content:
-                    application/json:
-                      schema:
-                        $ref: "#/components/schemas/Empty"
-              security:
-                - MtnFuzzAuth: [ ]
-              x-amazon-apigateway-integration:
-                httpMethod: "POST"
-                uri: "arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:822675929081:function:MtnFuzzRunsFn/invocations"
-                responses:
-                  default:
-                    statusCode: "200"
-                    responseParameters:
-                      method.response.header.Access-Control-Allow-Origin: "'*'"
-                passthroughBehavior: "when_no_match"
-                contentHandling: "CONVERT_TO_TEXT"
-                type: "aws_proxy"
-            post:
-              responses:
-                "200":
-                  description: "200 response"
-                  headers:
-                    Access-Control-Allow-Origin:
-                      schema:
-                        type: "string"
-                  content:
-                    application/json:
-                      schema:
-                        $ref: "#/components/schemas/Empty"
-              security:
-                - MtnFuzzAuth: [ ]
-              x-amazon-apigateway-integration:
-                httpMethod: "POST"
-                uri: "arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:822675929081:function:MtnFuzzRunsFn/invocations"
-                responses:
-                  default:
-                    statusCode: "200"
-                    responseParameters:
-                      method.response.header.Access-Control-Allow-Origin: "'*'"
-                passthroughBehavior: "when_no_match"
-                contentHandling: "CONVERT_TO_TEXT"
-                type: "aws_proxy"
-            options:
-              responses:
-                "200":
-                  description: "200 response"
-                  headers:
-                    Access-Control-Allow-Origin:
-                      schema:
-                        type: "string"
-                    Access-Control-Allow-Methods:
-                      schema:
-                        type: "string"
-                    Access-Control-Allow-Headers:
-                      schema:
-                        type: "string"
-                  content:
-                    application/json:
-                      schema:
-                        $ref: "#/components/schemas/Empty"
-              x-amazon-apigateway-integration:
-                responses:
-                  default:
-                    statusCode: "200"
-                    responseParameters:
-                      method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST'"
-                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-                      method.response.header.Access-Control-Allow-Origin: "'*'"
-                requestTemplates:
-                  application/json: "{\"statusCode\": 200}"
-                passthroughBehavior: "when_no_match"
-                type: "mock"
-          /runs/planId/{planId}:
-            post:
-              parameters:
-                - name: "planId"
-                  in: "path"
-                  required: true
-                  schema:
-                    type: "string"
-              responses:
-                "200":
-                  description: "200 response"
-                  headers:
-                    Access-Control-Allow-Origin:
-                      schema:
-                        type: "string"
-                  content:
-                    application/json:
-                      schema:
-                        $ref: "#/components/schemas/Empty"
-              security:
-                - MtnFuzzAuth: [ ]
-              x-amazon-apigateway-integration:
-                httpMethod: "POST"
-                uri: "arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:822675929081:function:MtnFuzzRunsFn/invocations"
-                responses:
-                  default:
-                    statusCode: "200"
-                    responseParameters:
-                      method.response.header.Access-Control-Allow-Origin: "'*'"
-                passthroughBehavior: "when_no_match"
-                contentHandling: "CONVERT_TO_TEXT"
-                type: "aws_proxy"
-            options:
-              responses:
-                "200":
-                  description: "200 response"
-                  headers:
-                    Access-Control-Allow-Origin:
-                      schema:
-                        type: "string"
-                    Access-Control-Allow-Methods:
-                      schema:
-                        type: "string"
-                    Access-Control-Allow-Headers:
-                      schema:
-                        type: "string"
-                  content:
-                    application/json:
-                      schema:
-                        $ref: "#/components/schemas/Empty"
-              x-amazon-apigateway-integration:
-                responses:
-                  default:
-                    statusCode: "200"
-                    responseParameters:
-                      method.response.header.Access-Control-Allow-Methods: "'OPTIONS,POST'"
-                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-                      method.response.header.Access-Control-Allow-Origin: "'*'"
-                requestTemplates:
-                  application/json: "{\"statusCode\": 200}"
-                passthroughBehavior: "when_no_match"
-                type: "mock"
 
-  MtnFuzzPlansFn:
+  ExampleItemsFn:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: MtnFuzzPlansFn
-      Role: !GetAtt MtnFuzzPlansRole.Arn
+      FunctionName: ExamplePlansFn
+      Role: !GetAtt ExamplePlansRole.Arn
       Handler: lambda_function.lambda_handler
       Runtime: python3.7
       CodeUri: functions/plans/
@@ -679,94 +524,51 @@ Resources:
       Layers:
         - arn:aws:lambda:us-west-2:822675929081:layer:dependencies:3
       Events:
-        PlansCreatedByEvent:
+        ItemsCreatedByEvent:
           Type: Api
           Properties:
-            Path: '/plans/createdBy'
+            Path: '/items/createdBy'
             Method: get
             RestApiId:
-              Ref: MtnFuzzApi
-        NewPlanEvent:
+              Ref: ExampleApi
+        NewItemEvent:
           Type: Api
           Properties:
-            Path: '/plans'
+            Path: '/items'
             Method: post
             RestApiId:
-              Ref: MtnFuzzApi
-        GetPlanEvent:
+              Ref: ExampleApi
+        GetItemEvent:
           Type: Api
           Properties:
-            Path: '/plans/{planId+}'
+            Path: '/items/{itemId+}'
             Method: get
             RestApiId:
-              Ref: MtnFuzzApi
-        UpdatePlanEvent:
+              Ref: ExampleApi
+        UpdateItemEvent:
           Type: Api
           Properties:
-            Path: '/plans/{planId+}'
+            Path: '/items/{itemId+}'
             Method: put
             RestApiId:
-              Ref: MtnFuzzApi
-        DeletePlanEvent:
+              Ref: ExampleApi
+        DeleteItemEvent:
           Type: Api
           Properties:
-            Path: '/plans/{planId+}'
+            Path: '/items/{itemId+}'
             Method: delete
             RestApiId:
-              Ref: MtnFuzzApi
-
-  MtnFuzzRunsFn:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: MtnFuzzRunsFn
-      Role: !GetAtt MtnFuzzPlansRole.Arn
-      Handler: lambda_function.lambda_handler
-      Runtime: python3.7
-      CodeUri: functions/runs/
-      Description: >-
-        runs
-      MemorySize: 512
-      Timeout: 10
-      Layers:
-        - arn:aws:lambda:us-west-2:822675929081:layer:dependencies:3
-      Events:
-        NewRunEvent:
-          Type: Api
-          Properties:
-            Path: '/runs'
-            Method: post
-            RestApiId:
-              Ref: MtnFuzzApi
-        GetRunsEvent:
-          Type: Api
-          Properties:
-            Path: '/runs'
-            Method: get
-            RestApiId:
-              Ref: MtnFuzzApi
-        DeleteRunEvent:
-          Type: Api
-          Properties:
-            Path: '/runs'
-            Method: delete
-            RestApiId:
-              Ref: MtnFuzzApi
+              Ref: ExampleApi
 
   # ... with a log-group for server-side logs
-  MtnFuzzPlansLogGroup:
+  ExampleItemsLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${MtnFuzzPlansFn}"
-      RetentionInDays: 30
-
-  MtnFuzzRunsLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub "/aws/lambda/${MtnFuzzRunsFn}"
+      LogGroupName: !Sub "/aws/lambda/${ExampleItemsFn}"
       RetentionInDays: 30
 
   # ... and permissions for the Lambdas
-  MtnFuzzPlansRole:
+  ExamplePlansRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -777,7 +579,7 @@ Resources:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
 
-  MtnFuzzLogGroupPolicy:
+  ExampleLogGroupPolicy:
     Type: "AWS::IAM::Policy"
     Properties:
       PolicyName: "allow-lambda-logging"
@@ -790,14 +592,12 @@ Resources:
               - logs:DescribeLogStreams
               - logs:PutLogEvents
             Resource:
-              - "arn:aws:logs:*:822675929081:log-group:/aws/lambda/MtnFuzzPlansFn"
-              - "arn:aws:logs:*:822675929081:log-group:/aws/lambda/MtnFuzzPlansFn:log-stream:*"
-              - "arn:aws:logs:*:822675929081:log-group:/aws/lambda/MtnFuzzRunsFn"
-              - "arn:aws:logs:*:822675929081:log-group:/aws/lambda/MtnFuzzRunsFn:log-stream:*"
+              - "arn:aws:logs:*:822675929081:log-group:/aws/lambda/ExamplePlansFn"
+              - "arn:aws:logs:*:822675929081:log-group:/aws/lambda/ExamplePlansFn:log-stream:*"
       Roles:
-        - !Ref MtnFuzzPlansRole
+        - !Ref ExamplePlansRole
 
-  MtnFuzzDynamoDBPolicy:
+  ExampleDynamoDBPolicy:
     Type: "AWS::IAM::Policy"
     Properties:
       PolicyName: "allow-dynamoDB-access"
@@ -827,14 +627,12 @@ Resources:
               - dynamodb:GetRecords
               - dynamodb:DescribeTableReplicaAutoScaling
             Resource:
-              - "arn:aws:dynamodb:us-west-2:822675929081:table/plans"
-              - "arn:aws:dynamodb:*:822675929081:table/plans/stream/*"
-              - "arn:aws:dynamodb:us-west-2:822675929081:table/runs"
-              - "arn:aws:dynamodb:*:822675929081:table/runs/stream/*"
+              - "arn:aws:dynamodb:us-west-2:822675929081:table/items"
+              - "arn:aws:dynamodb:*:822675929081:table/items/stream/*"
       Roles:
-        - !Ref MtnFuzzPlansRole
+        - !Ref ExamplePlansRole
 
-  MtnFuzzS3DataStorePolicy:
+  ExampleS3DataStorePolicy:
     Type: "AWS::IAM::Policy"
     Properties:
       PolicyName: "allow-datastore-access"
@@ -848,19 +646,19 @@ Resources:
               - s3:ListBucket
               - s3:DeleteObject
             Resource:
-              - "arn:aws:s3:::mtnfuzz-data-store/*"
-              - "arn:aws:s3:::mtnfuzz-data-store"
+              - "arn:aws:s3:::example-data-store/*"
+              - "arn:aws:s3:::example-data-store"
       Roles:
-        - !Ref MtnFuzzPlansRole
+        - !Ref ExamplePlansRole
 
   # The Client-side app is hosted with a CloudFront Distribution.
-  MtnFuzzAppDistribution:
+  ExampleAppDistribution:
     Type: AWS::CloudFront::Distribution
     Properties:
       DistributionConfig:
         Comment: 'Cloudfront distribution for client App'
         Aliases:
-          - !Sub "${MtnFuzzAppDomain}.${RootDomain}"
+          - !Sub "${ExampleAppDomain}.${RootDomain}"
         DefaultCacheBehavior:
           AllowedMethods:
             - HEAD
@@ -869,7 +667,7 @@ Resources:
           CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
           Compress: true
           SmoothStreaming: false
-          TargetOriginId: mtnfuzz-client-app
+          TargetOriginId: examplez-client-app
           ViewerProtocolPolicy: redirect-to-https
         DefaultRootObject: index.html
         Enabled: true
@@ -882,13 +680,13 @@ Resources:
           - ConnectionAttempts: 3
             ConnectionTimeout: 10
             DomainName: !GetAtt MtnFuzzClientAppBucket.DomainName
-            Id: mtnfuzz-client-app
+            Id: example-client-app
             OriginPath: ''
             OriginShield:
               Enabled: false
             S3OriginConfig:
               OriginAccessIdentity:
-                Fn::Sub: 'origin-access-identity/cloudfront/${MtnFuzzCloudFrontOriginAccessIdentity}'
+                Fn::Sub: 'origin-access-identity/cloudfront/${ExampleCloudFrontOriginAccessIdentity}'
         PriceClass: PriceClass_All
         ViewerCertificate:
           AcmCertificateArn: !Sub "arn:aws:acm:us-east-1:${AwsAccountId}:certificate/${AcmCertificateId}"
@@ -896,39 +694,39 @@ Resources:
         WebACLId: ''
 
   # ... which depends on having a bucket for staging, a URL, and a Policy
-  MtnFuzzAppClientURL:
+  ExampleAppClientURL:
     Type: 'AWS::Route53::RecordSetGroup'
     Properties:
       HostedZoneId: !Ref RootHostedZone
       RecordSets:
-        - Name:  !Sub "${MtnFuzzAppDomain}.${RootDomain}"
+        - Name:  !Sub "${ExampleAppDomain}.${RootDomain}"
           Type: A
           AliasTarget:
             HostedZoneId: !Ref CfHostedZone
             DNSName: !GetAtt
-              - MtnFuzzAppDistribution
+              - ExampleAppDistribution
               - DomainName
 
-  MtnFuzzClientAppBucket:
+  ExampleClientAppBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "${MtnFuzzAppDomain}.${RootDomain}"
+      BucketName: !Sub "${ExampleAppDomain}.${RootDomain}"
 
-  MtnFuzzClientAppBucketPolicy:
+  ExampleClientAppBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
-      Bucket: !Ref MtnFuzzClientAppBucket
+      Bucket: !Ref ExampleClientAppBucket
       PolicyDocument:
         Version: 2012-10-17
         Statement:
           - Effect: Allow
             Action: 's3:GetObject'
             Resource:
-              - !Sub "arn:aws:s3:::${MtnFuzzClientAppBucket}/*"
+              - !Sub "arn:aws:s3:::${ExampleClientAppBucket}/*"
             Principal:
-              AWS: !Sub "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${MtnFuzzCloudFrontOriginAccessIdentity}"
+              AWS: !Sub "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${ExampleCloudFrontOriginAccessIdentity}"
 
-  MtnFuzzCloudFrontOriginAccessIdentity:
+  ExampleCloudFrontOriginAccessIdentity:
     Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
     Properties:
       CloudFrontOriginAccessIdentityConfig:
