@@ -24,15 +24,15 @@ Parameters:
     Type: String
     Default: "Z0608589Z32H3ZBSW3HW"
 
-  MtnFuzzAppDomain:
+  AppDomain:
     Type: String
     Default: "exampleapp"
 
-  MtnFuzzAuthDomain:
+  AuthDomain:
     Type: String
     Default: "exampleauth"
 
-  MtnFuzzApiDomain:
+  ApiDomain:
     Type: String
     Default: "exampleapi"
 
@@ -41,12 +41,11 @@ Parameters:
     Default: "Z2FDTNDATAQYW2"
 
 Resources:
-
   # The Cognito User Pool, Client, and Domain are for the Authentication Service
   ExampleUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
-      UserPoolName: mtnfuzzusers
+      UserPoolName: exampleusers
       AutoVerifiedAttributes:
         - email
       AccountRecoverySetting:
@@ -111,7 +110,7 @@ Resources:
   ExampleItemsTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: exampleplans
+      TableName: exampleitems
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: createdBy
