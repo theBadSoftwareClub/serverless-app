@@ -912,7 +912,7 @@ Resources:
   MtnFuzzClientAppBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Ref MtnFuzzAppDomain
+      BucketName: !Sub "${MtnFuzzAppDomain}.${RootDomain}"
 
   MtnFuzzClientAppBucketPolicy:
     Type: AWS::S3::BucketPolicy

@@ -107,7 +107,7 @@ const App = () => {
         <Container>
           <Switch>
             <Route path="/" exact component={Home} />
-            <Route path="/items" component={Items} />
+            <Route path="/mtns" component={Items} />
           </Switch>
         </Container>
       </BrowserRouter>
