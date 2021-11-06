@@ -21,7 +21,7 @@ An Example of Leveraging AWS to host a Simple, scalable web Application
      - **Hosted Zone Id**: for the Root Domain
      - **Domain Names**: for the Application, Auth Service, and API
      - **CfHostedZoneId**, which can keep its value, (unless the value specified in the AWS doc has changed: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-aliastarget.html)
-3. (optional) enter arn of an existing dependencies layer or make a new one from functions/dependencies
+3. (optional) Update the functions in the Template to include an existing dependencies layer or make a new one from functions/dependencies
 4. Deploy Serverless App to AWS with SAM CLI (or IDE plugins)
 5. make the A record in Route 53 for the auth domain. (This is only required untill this roadmap issue is resolved: https://github.com/aws-cloudformation/cloudformation-coverage-roadmap/issues/241) The value can be located by looking for the app domain settings under the Cognito user pool in the console
 
