@@ -36,9 +36,6 @@ Parameters:
     Type: String
     Default: "Z2FDTNDATAQYW2"
 
-
-
-
 Resources:
 
   # The Cognito User Pool, Client, and Domain are for the Authentication Service
