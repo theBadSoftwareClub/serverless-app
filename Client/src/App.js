@@ -82,7 +82,7 @@ const useStyles = makeStyles((app_theme) => ({
   },
   input: {
     display: 'none',
-  },
+  }
 }));
 
 
@@ -107,7 +107,7 @@ const App = () => {
         <Container>
           <Switch>
             <Route path="/" exact component={Home} />
-            <Route path="/mtns" component={Items} />
+            <Route path="/items" component={Items} />
           </Switch>
         </Container>
       </BrowserRouter>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { makeStyles } from '@material-ui/core/styles';
+import { makeStyles, useTheme } from '@material-ui/core/styles';
 import {
   Button,
   Dialog,
@@ -9,20 +9,28 @@ import {
   Grid,
   TextField,
   FormLabel,
-  IconButton
+  IconButton,
+  Typography,
+  Box
 } from '@material-ui/core';
 
 import Alert from '@material-ui/lab/Alert';
 import FriendlyYaml from './friendlyyaml';
 import DeleteIcon from '@material-ui/icons/Delete';
 import EditIcon from '@material-ui/icons/Edit';
-const useStyles = makeStyles((app_theme) => ({
+const useStyles = makeStyles((theme) => ({
   pagetitle: {
-    padding: app_theme.spacing(4),
+    padding: theme.spacing(7),
   },
   input: {
     display: 'none',
   },
+  document: {
+    padding: theme.spacing(6),
+  },
+  colorpane: {
+    backgroundColor: theme.secondary
+  }
 }));
 
 const Item = ({ item, token, onChange,deleteItem,updateItem }) => {
@@ -33,14 +41,16 @@ const Item = ({ item, token, onChange,deleteItem,updateItem }) => {
   const [formattedbody, setFormattedBody] = useState();
   const [dialogopen, setDialogOpen] = useState(false);
   const classes = useStyles();
+  const theme = useTheme();
 
+  console.log(classes.colorpane)
 
   async function fetchItemNew() {
         console.log('fetching item: ', item.itemId)
         console.log('api url:', process.env.REACT_APP_API_URL)
       if (typeof token != 'undefined') {
             // make the the request with fetch
-            let url = encodeURI(`https://${process.env.REACT_APP_API_Domain}.${process.env.REACT_APP_ROOT_Domain}/items/${item.itemId}`)
+            let url = encodeURI(`https://${process.env.REACT_APP_API_DOMAIN}.${process.env.REACT_APP_ROOT_DOMAIN}/items/${item.itemId}`)
             console.log(url)
             const response = await fetch(url, {
                 headers: {
@@ -113,9 +123,10 @@ const Item = ({ item, token, onChange,deleteItem,updateItem }) => {
     <Grid
             key={item.itemId}
             container
-            spacing={2}
+            spacing={7}
             alignItems="flex-start"
             direction="column"
+
         >
             {body &&
                 <>
@@ -181,15 +192,20 @@ const Item = ({ item, token, onChange,deleteItem,updateItem }) => {
                         </Dialog>
                         :
                     <>
+                    <Box component="span" sx={{ pl: '2em' }} >
                     <Grid item>
-                        <div padding-left="20px">
-                            <FriendlyYaml yamldoc={JSON.stringify(body)}/>
-                        </div>
-                    </Grid>
 
-                    <Grid container direction="row" justifyContent="space-between">
-                        <Grid item>
-                            <Grid container direction="row">
+                            <FriendlyYaml yamldoc={JSON.stringify(body)}/>
+
+                    </Grid>
+                    </Box>
+
+                    <Grid container direction="row" alignItems={"stretch"} justifyContent="flex-end"  >
+                        <Box>
+                        <Grid item >
+                            <Box component="span" p={12} >
+                            <Grid container direction="row" spacing={3}>
+
                                 <Grid item>
                                     <IconButton
                                         aria-label="edit"
@@ -200,6 +216,7 @@ const Item = ({ item, token, onChange,deleteItem,updateItem }) => {
                                         <EditIcon/>
                                     </IconButton>
                                 </Grid>
+
                                 <Grid item>
                                     <IconButton
                                         aria-label="delete"
@@ -211,9 +228,15 @@ const Item = ({ item, token, onChange,deleteItem,updateItem }) => {
                                         <DeleteIcon/>
                                     </IconButton>
                                 </Grid>
+
                             </Grid>
+</Box>
                         </Grid>
+                        </Box>
+
                     </Grid>
+
+
 
 
                     </>

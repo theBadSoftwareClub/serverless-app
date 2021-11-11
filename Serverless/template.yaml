@@ -80,7 +80,7 @@ Resources:
         - email
         - profile
       CallbackURLs:
-        - !Sub "https://${ExampleAppDomain}.${RootDomain}"
+        - !Sub "https://${AppDomain}.${RootDomain}"
       ExplicitAuthFlows:
         - ALLOW_REFRESH_TOKEN_AUTH
         - ALLOW_USER_PASSWORD_AUTH
@@ -93,7 +93,7 @@ Resources:
     Type: AWS::Cognito::UserPoolDomain
     Properties:
       UserPoolId: !Ref ExampleUserPool
-      Domain: !Sub "${ExampleAuthDomain}.${RootDomain}"
+      Domain: !Sub "${AuthDomain}.${RootDomain}"
       CustomDomainConfig:
         CertificateArn: !Sub "arn:aws:acm:us-east-1:${AwsAccountId}:certificate/${AcmCertificateId}"
 
@@ -128,12 +128,11 @@ Resources:
     Type: AWS::Serverless::Api
     Properties:
       Domain:
-        DomainName: !Sub "${ExampleApiDomain}.${RootDomain}"
+        DomainName: !Sub "${ApiDomain}.${RootDomain}"
         CertificateArn: !Sub "arn:aws:acm:us-east-1:${AwsAccountId}:certificate/${AcmCertificateId}"
         EndpointConfiguration: EDGE
         Route53:
           HostedZoneId: !Ref RootHostedZone
-
       Auth:
         Authorizers:
           ExampleAuth:
@@ -150,7 +149,7 @@ Resources:
           title: "ExampleApi"
           version: "1.0"
         servers:
-          - url:  !Sub "https://${ExampleApiDomain}.${RootDomain}"
+          - url:  !Sub "https://${ApiDomain}.${RootDomain}"
         paths:
           /:
             get:
@@ -326,7 +325,7 @@ Resources:
                       schema:
                         $ref: "#/components/schemas/Empty"
               security:
-                - MtnFuzzAuth: [ ]
+                - ExampleAuth: [ ]
               x-amazon-apigateway-integration:
                 httpMethod: "POST"
                 uri: !Sub "arn:aws:apigateway:${AwsDefaultRegion}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AwsDefaultRegion}:${AwsAccountId}:function:ExampleItemsFn/invocations"
@@ -434,7 +433,7 @@ Resources:
                 passthroughBehavior: "when_no_match"
                 cacheNamespace: "15yjo6"
                 cacheKeyParameters:
-                  - "method.request.path.planId"
+                  - "method.request.path.itemId"
                 contentHandling: "CONVERT_TO_TEXT"
                 type: "aws_proxy"
             delete:
@@ -456,7 +455,7 @@ Resources:
                       schema:
                         $ref: "#/components/schemas/Empty"
               security:
-                - MtnFuzzAuth: [ ]
+                - ExampoleAuth: [ ]
               x-amazon-apigateway-integration:
                 httpMethod: "POST"
                 uri: !Sub "arn:aws:apigateway:${AwsDefaultRegion}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AwsDefaultRegion}:${AwsAccountId}:function:ExampleItemsFn/invocations"
@@ -473,7 +472,7 @@ Resources:
                 type: "aws_proxy"
             options:
               parameters:
-                - name: "planId"
+                - name: "itemId"
                   in: "path"
                   required: true
                   schema:
@@ -511,17 +510,15 @@ Resources:
   ExampleItemsFn:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: ExamplePlansFn
-      Role: !GetAtt ExamplePlansRole.Arn
+      FunctionName: ExampleItemsFn
+      Role: !GetAtt ExampleItemsRole.Arn
       Handler: lambda_function.lambda_handler
       Runtime: python3.7
-      CodeUri: functions/plans/
+      CodeUri: functions/items/
       Description: >-
         plans
       MemorySize: 512
       Timeout: 10
-      Layers:
-        - arn:aws:lambda:us-west-2:822675929081:layer:dependencies:3
       Events:
         ItemsCreatedByEvent:
           Type: Api
@@ -567,7 +564,7 @@ Resources:
       RetentionInDays: 30
 
   # ... and permissions for the Lambdas
-  ExamplePlansRole:
+  ExampleItemsRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -591,10 +588,10 @@ Resources:
               - logs:DescribeLogStreams
               - logs:PutLogEvents
             Resource:
-              - "arn:aws:logs:*:822675929081:log-group:/aws/lambda/ExamplePlansFn"
-              - "arn:aws:logs:*:822675929081:log-group:/aws/lambda/ExamplePlansFn:log-stream:*"
+              - "arn:aws:logs:*:822675929081:log-group:/aws/lambda/ExampleItemsFn"
+              - "arn:aws:logs:*:822675929081:log-group:/aws/lambda/ExampleItemsFn:log-stream:*"
       Roles:
-        - !Ref ExamplePlansRole
+        - !Ref ExampleItemsRole
 
   ExampleDynamoDBPolicy:
     Type: "AWS::IAM::Policy"
@@ -626,10 +623,10 @@ Resources:
               - dynamodb:GetRecords
               - dynamodb:DescribeTableReplicaAutoScaling
             Resource:
-              - "arn:aws:dynamodb:us-west-2:822675929081:table/items"
-              - "arn:aws:dynamodb:*:822675929081:table/items/stream/*"
+              - "arn:aws:dynamodb:us-west-2:822675929081:table/exampleitems"
+              - "arn:aws:dynamodb:*:822675929081:table/exampleitems/stream/*"
       Roles:
-        - !Ref ExamplePlansRole
+        - !Ref ExampleItemsRole
 
   ExampleS3DataStorePolicy:
     Type: "AWS::IAM::Policy"
@@ -648,7 +645,7 @@ Resources:
               - "arn:aws:s3:::example-data-store/*"
               - "arn:aws:s3:::example-data-store"
       Roles:
-        - !Ref ExamplePlansRole
+        - !Ref ExampleItemsRole
 
   # The Client-side app is hosted with a CloudFront Distribution.
   ExampleAppDistribution:
@@ -657,7 +654,7 @@ Resources:
       DistributionConfig:
         Comment: 'Cloudfront distribution for client App'
         Aliases:
-          - !Sub "${ExampleAppDomain}.${RootDomain}"
+          - !Sub "${AppDomain}.${RootDomain}"
         DefaultCacheBehavior:
           AllowedMethods:
             - HEAD
@@ -666,7 +663,7 @@ Resources:
           CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
           Compress: true
           SmoothStreaming: false
-          TargetOriginId: examplez-client-app
+          TargetOriginId: example-client-app
           ViewerProtocolPolicy: redirect-to-https
         DefaultRootObject: index.html
         Enabled: true
@@ -678,7 +675,7 @@ Resources:
         Origins:
           - ConnectionAttempts: 3
             ConnectionTimeout: 10
-            DomainName: !GetAtt MtnFuzzClientAppBucket.DomainName
+            DomainName: !GetAtt ExampleClientAppBucket.DomainName
             Id: example-client-app
             OriginPath: ''
             OriginShield:
@@ -698,7 +695,7 @@ Resources:
     Properties:
       HostedZoneId: !Ref RootHostedZone
       RecordSets:
-        - Name:  !Sub "${ExampleAppDomain}.${RootDomain}"
+        - Name:  !Sub "${AppDomain}.${RootDomain}"
           Type: A
           AliasTarget:
             HostedZoneId: !Ref CfHostedZone
@@ -709,7 +706,7 @@ Resources:
   ExampleClientAppBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "${ExampleAppDomain}.${RootDomain}"
+      BucketName: !Sub "${AppDomain}.${RootDomain}"
 
   ExampleClientAppBucketPolicy:
     Type: AWS::S3::BucketPolicy

@@ -26,7 +26,7 @@ const Items = () => {
   const [items, setItems ] = useState();
   const [user, setUser ] = useState();
   const [token, setToken] = useState();
-  const app_theme = useTheme();
+  const theme = useTheme();
 
 
   async function fetchItems() {
@@ -34,7 +34,7 @@ const Items = () => {
     if (typeof token != 'undefined') {
       // make the the request with fetch
       console.log(process.env.REACT_APP_API_URL)
-      let url = encodeURI(`https://${process.env.REACT_APP_API_Domain}.${process.env.REACT_APP_ROOT_Domain}/items/createdBy`)
+      let url = encodeURI(`https://${process.env.REACT_APP_API_DOMAIN}.${process.env.REACT_APP_ROOT_DOMAIN}/items/createdBy`)
       console.log(url)
       const response = await fetch(url, {
         headers: {
@@ -68,7 +68,7 @@ const Items = () => {
   };
 
   async function newItem(title, body ) {
-    let url = encodeURI(`https://${process.env.REACT_APP_API_Domain}.${process.env.REACT_APP_ROOT_Domain}/items?title=${title}`)
+    let url = encodeURI(`https://${process.env.REACT_APP_API_DOMAIN}.${process.env.REACT_APP_ROOT_DOMAIN}/items?title=${title}`)
     console.log('url: ', url)
 
     const resp = await fetch(url, {
@@ -94,7 +94,7 @@ const Items = () => {
 
   async function deleteItem(itemId){
 
-    let url = encodeURI(`https://${process.env.REACT_APP_API_Domain}.${process.env.REACT_APP_ROOT_Domain}/items/${itemId}`)
+    let url = encodeURI(`https://${process.env.REACT_APP_API_DOMAIN}.${process.env.REACT_APP_ROOT_DOMAIN}/items/${itemId}`)
 
     if (typeof token != 'undefined') {
       // make the the request with fetch
@@ -124,7 +124,7 @@ const Items = () => {
   async function updateItem(itemId, title, body ) {
 
 
-    let url = encodeURI(`https://${process.env.REACT_APP_API_Domain}.${process.env.REACT_APP_ROOT_Domain}/items/${itemId}?title=${title}`)
+    let url = encodeURI(`https://${process.env.REACT_APP_API_DOMAIN}.${process.env.REACT_APP_ROOT_DOMAIN}/items/${itemId}?title=${title}`)
 
     console.log('updating: ', itemId, title, body )
 
