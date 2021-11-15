@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { makeStyles, useTheme } from '@material-ui/core/styles';
+import { makeStyles } from '@material-ui/core/styles';
 import {
   Button,
   Dialog,
@@ -10,7 +10,6 @@ import {
   TextField,
   FormLabel,
   IconButton,
-  Typography,
   Box
 } from '@material-ui/core';
 
@@ -37,15 +36,11 @@ const Item = ({ item, token, onChange,deleteItem,updateItem }) => {
   const [body, setBody] = useState();
   const [title, setTitle] = useState(item.itemTitle);
   const [validationfeedback, setValidationFeedback] = useState();
-  const [newitemopen, setNewItemOpen] = useState(false);
   const [formattedbody, setFormattedBody] = useState();
   const [dialogopen, setDialogOpen] = useState(false);
   const classes = useStyles();
-  const theme = useTheme();
 
-  console.log(classes.colorpane)
-
-  async function fetchItemNew() {
+  async function fetchItem() {
         console.log('fetching item: ', item.itemId)
         console.log('api url:', process.env.REACT_APP_API_URL)
       if (typeof token != 'undefined') {
@@ -116,7 +111,7 @@ const Item = ({ item, token, onChange,deleteItem,updateItem }) => {
     };
 
   useEffect(() => {
-        fetchItemNew()
+        fetchItem()
     }, []);
 
   return (

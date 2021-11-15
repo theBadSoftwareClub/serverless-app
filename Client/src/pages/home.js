@@ -5,12 +5,10 @@ import {
   CardContent,
   Container,
 } from '@material-ui/core';
-import { useTheme } from '@material-ui/core/styles';
 
 
 
 const Home = () => {
-  const app_theme = useTheme();
 
   return (
     <Container className="container">

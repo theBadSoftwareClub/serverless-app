@@ -12,21 +12,19 @@ import {
 
 import Item from '../components/item';
 import NewItem from '../components/newitem';
-import { useTheme } from '@material-ui/core/styles';
 import { Amplify, Auth } from 'aws-amplify';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 Amplify.configure(awsExports);
 
 
 
-const Items = () => {
+const Items = (user) => {
   const [isEmpty, setIsEmpty] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [showcreator, setShowCreator] = useState(true);
   const [items, setItems ] = useState();
-  const [user, setUser ] = useState();
+  const [inauthentic, setInauthentic ] = useState();
+
   const [token, setToken] = useState();
-  const theme = useTheme();
 
 
   async function fetchItems() {
@@ -57,9 +55,6 @@ const Items = () => {
               setIsEmpty(true)
             }
 
-
-
-            console.log('scan results: ', json.Items)
             setIsLoading(false);
           })
           .catch((err) => console.log(err));
@@ -86,6 +81,7 @@ const Items = () => {
 
         setIsLoading(true);
         setIsEmpty(false);
+        console.log(res)
       })
       .catch((err) => console.log(err));
 
@@ -112,7 +108,7 @@ const Items = () => {
           .json()
           .then((json) => {
             // work here with the json response object
-            console.log(json)
+
             setIsLoading(false);
 
           })
@@ -163,22 +159,28 @@ const Items = () => {
       .then(authuser => {
         setToken(authuser.signInUserSession.idToken.jwtToken)
         fetchItems()
+      }, reason => {
+        console.log('need follow-through for un-authenticated')
+        setInauthentic(true)
+        setIsLoading(false)
       })
 
-}, [token, isLoading]);
+}, [user, token, isLoading]);
 
 
   if (isLoading) {
     return <Typography>Loading ...</Typography>
   }
 
+  if (inauthentic) {
+    return <Typography>Must Sign In to See Items ...</Typography>
+  }
+
   if (isEmpty) {
     return (
       <Fragment>
       <Typography>No Items Returned</Typography>
-      {showcreator && (
       <NewItem items={ items } newItem={ newItem } updateItem={ updateItem } />
-      )}
     </Fragment>
     );
 
@@ -208,11 +210,11 @@ const Items = () => {
                 </Grid>
             )}
 
-            {showcreator && (
+
               <Grid>
             <NewItem items={ items } newItem={ newItem } updateItem={ updateItem } />
               </Grid>
-          )}
+
             </Grid>
 
       </Container>

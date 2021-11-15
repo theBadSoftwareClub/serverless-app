@@ -7,3 +7,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Londrina+Solid');
 @import url('https://fonts.googleapis.com/css2?family=PT+Mono');
 
+:root {
+  --amplify-primary-color: #5f4339;
+  --amplify-primary-tint: #8d6e63;
+  --amplify-secondary-tint: #5f4339;
+  --amplify-primary-shade: #000;
+}

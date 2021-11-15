@@ -9,11 +9,9 @@ import {
   IconButton,
   Divider,
   List,
-  ListItem,
-  Modal
+  ListItem
 } from '@material-ui/core';
 import { Link } from 'react-router-dom';
-import MoreVertIcon from '@material-ui/icons/MoreVert';
 import FlagIcon from '@material-ui/icons/Flag';
 import MenuIcon from '@material-ui/icons/Menu';
 import HomeIcon from '@material-ui/icons/Home';
@@ -24,7 +22,7 @@ import ListItemText from '@material-ui/core/ListItemText';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import AccountCircle from '@material-ui/icons/AccountCircle';
 import { Amplify } from 'aws-amplify';
-import { AmplifyAuthenticator, AmplifySignOut, AmplifySignUp, AmplifySignIn } from '@aws-amplify/ui-react';
+import { AmplifySignOut } from '@aws-amplify/ui-react';
 import { AuthState, onAuthUIStateChange } from '@aws-amplify/ui-components';
 import awsExports from "../aws-exports";
 const drawerWidth = 240;
@@ -99,55 +97,15 @@ const useStyles = makeStyles((theme) => ({
 Amplify.configure(awsExports);
 
 
-const Navigation = () => {
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [authopen, setAuthopen] =  useState(false);
+const Navigation = ({authopen, setAuthopen, authState, setAuthState, user, setUser }) => {
   const classes = useStyles();
   const theme = useTheme();
   const [draweropen, setDrawerOpen] = useState(false);
-  const [authState, setAuthState] = useState();
-  const [user, setUser] = useState();
-
-  const signinopen = Boolean(anchorEl);
 
 
-  const handleSigninOpen = () => {
-    setAuthopen(true)
-  };
+    const handleClose = () => {
 
-  async function testServer() {
-
-      if ((user !== undefined ) && (user !== null )) {
-
-          let url = encodeURI(`${process.env.REACT_APP_API_URL}/`)
-          let token = user.signInUserSession.idToken.jwtToken
-          console.log('testing server: ', url)
-          // make the the request with fetch
-          const response = await fetch(url, {
-              redirect: 'follow',
-              headers: {
-                  Authorization: `${token}`,
-                  Accept: 'application/json',
-                  'Content-Type': 'application/json'
-              },
-          });
-
-          // handle the followup with another await
-          const res = await response
-              .json()
-              .then((json) => {
-                  // work here with the json response object
-                  // console.log('json', json)
-                  console.log('results:', json);
-                  //setIsLoading(false);
-              })
-              .catch((err) => console.log(err));
-      }
-  }
-
-  const handleClose = () => {
-
-    setAuthopen(false)
+    // setAuthopen(false)
   };
 
   const handleDrawerOpen = () => {
@@ -158,17 +116,23 @@ const Navigation = () => {
     setDrawerOpen(false);
   };
 
+  const handleAuthNav = () => {
+      console.log('authNav: ')
+      setAuthopen(true)
+
+
+  };
+
  useEffect(() => {
 
     return onAuthUIStateChange((nextAuthState, authData) => {
             console.log('state:', nextAuthState)
             setAuthState(nextAuthState);
-            if (nextAuthState == 'signedin'){
+            if (nextAuthState === 'signedin'){
                 setUser(authData);
-                testServer();
                 handleClose()
             }
-            if (nextAuthState == 'signedout'){
+            if (nextAuthState === 'signedout'){
                 setUser(null);
                 handleClose()
             }
@@ -207,52 +171,12 @@ const Navigation = () => {
                 )
            : (
                     <>
-                    <IconButton color="primary" onClick={handleSigninOpen}><AccountCircle /></IconButton>
+                    <IconButton color="primary" onClick={handleAuthNav}><AccountCircle /></IconButton>
 
                         </>
                 )
                 }
             </>
-             {authopen ? (
-
-            <Modal
-                open={authopen}
-                onClose={handleClose}
-            >
-                 {<AmplifyAuthenticator>
-              <AmplifySignIn
-                headerText="Please Sign In"
-                slot="sign-in"
-                usernameAlias="email"
-              >
-                   <div slot="federated-buttons">
-                   </div>
-              </AmplifySignIn>
-                <AmplifySignUp
-            slot="sign-up"
-            usernameAlias="email"
-            formFields={[
-              {
-                type: "email",
-                label: "Email:",
-                placeholder: "Custom email placeholder",
-                inputProps: { required: true, autocomplete: "username" },
-              },
-              {
-                type: "password",
-                label: "Password:",
-                placeholder: "Custom password placeholder",
-                inputProps: { required: true, autocomplete: "new-password" },
-              },
-
-            ]}
-          />
-            </AmplifyAuthenticator>}
-                </Modal>
-                ) : null
-                }
-
-
 
         </Toolbar>
 

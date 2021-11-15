@@ -9,8 +9,6 @@ import {
   Grid,
   TextField,
   FormLabel,
-  FormControlLabel,
-  Switch,
 } from '@material-ui/core';
 
 import Alert from '@material-ui/lab/Alert';

@@ -1,17 +1,18 @@
-import React, { useState } from 'react';
-import { Container }  from '@material-ui/core';
-import Amplify from 'aws-amplify';
+import React, {useEffect, useState} from 'react';
+import {Container, Modal} from '@material-ui/core';
 import aws_exports from './aws-exports';
 import './App.css';
 import {
   createTheme,
-  makeStyles,
   ThemeProvider,
 } from '@material-ui/core/styles';
 import { BrowserRouter, Route, Switch } from 'react-router-dom';
 import Navigation from './components/navigation';
 import Home from './pages/home';
 import Items from './pages/items';
+import { Amplify } from 'aws-amplify';
+import { AmplifyAuthenticator, AmplifySignUp, AmplifySignIn } from '@aws-amplify/ui-react';
+import { onAuthUIStateChange } from '@aws-amplify/ui-components';
 Amplify.configure(aws_exports);
 
 const displayfont = "'Londrina Shadow', 'sans-serif'";
@@ -73,7 +74,7 @@ const app_theme = createTheme({
 });
 
 // usestyles makes styles out of the theme
-const useStyles = makeStyles((app_theme) => ({
+/*const useStyles = makeStyles((app_theme) => ({
   pagetitle: {
     padding: app_theme.spacing(9),
   },
@@ -83,13 +84,17 @@ const useStyles = makeStyles((app_theme) => ({
   input: {
     display: 'none',
   }
-}));
+}));*/
 
 
 const App = () => {
-  const [drawer, setDrawer] = useState();
-  const classes = useStyles();
-  const toggleDrawer = (anchor, open) => (event) => {
+  //const [drawer, setDrawer] = useState();
+  const [user, setUser ] = useState();
+  const [authState, setAuthState] = useState();
+
+  const [authopen, setAuthopen] =  useState(false);
+
+  /*const toggleDrawer = (anchor, open) => (event) => {
     if (
       event.type === 'keydown' &&
       (event.key === 'Tab' || event.key === 'Shift')
@@ -98,16 +103,111 @@ const App = () => {
     }
 
     setDrawer({ ...drawer, [anchor]: open });
+  };*/
+
+
+  async function testServer() {
+
+      if ((user !== undefined ) && (user !== null )) {
+
+          let url = encodeURI(`https://${process.env.REACT_APP_API_DOMAIN}.${process.env.REACT_APP_ROOT_DOMAIN}/`)
+          let token = user.signInUserSession.idToken.jwtToken
+          console.log('testing server: ', url)
+          // make the the request with fetch
+          const response = await fetch(url, {
+              redirect: 'follow',
+              headers: {
+                  Authorization: `${token}`,
+                  Accept: 'application/json',
+                  'Content-Type': 'application/json'
+              },
+          });
+
+          // handle the followup with another await
+          const res = await response
+              .json()
+              .then((json) => {
+                  // work here with the json response object
+                  console.log('json', json)
+                  //setIsLoading(false);
+              })
+              .catch((err) => console.log(err));
+      }
+  }
+
+  const handleClose = () => {
+
+    setAuthopen(false)
   };
+
+  useEffect(() => {
+
+    return onAuthUIStateChange((nextAuthState, authData) => {
+            console.log('state:', nextAuthState)
+            setAuthState(nextAuthState);
+            if (nextAuthState === 'signedin'){
+                setUser(authData);
+                setAuthopen(false);
+                testServer();
+            }
+            if (nextAuthState === 'signedout'){
+                setUser(null);
+                setAuthopen(false);
+            }
+
+        });
+  });
 
   return (
     <ThemeProvider theme={ app_theme }>
       <BrowserRouter>
-        <Navigation />
+
+        {authopen ? (
+
+            <Modal
+                open={authopen}
+                onClose={handleClose}
+            >
+                 {<AmplifyAuthenticator>
+              <AmplifySignIn
+                headerText="Please Sign In"
+                slot="sign-in"
+                usernameAlias="email"
+              >
+                   <div slot="federated-buttons">
+                   </div>
+              </AmplifySignIn>
+                <AmplifySignUp
+            slot="sign-up"
+            usernameAlias="email"
+            formFields={[
+              {
+                type: "email",
+                label: "Email:",
+                placeholder: "Custom email placeholder",
+                inputProps: { required: true, autocomplete: "username" },
+              },
+              {
+                type: "password",
+                label: "Password:",
+                placeholder: "Custom password placeholder",
+                inputProps: { required: true, autocomplete: "new-password" },
+              },
+
+            ]}
+          />
+            </AmplifyAuthenticator>}
+                </Modal>
+                ) : null
+                }
+
+
+        <Navigation authopen={authopen} setAuthopen={setAuthopen} authState={authState} setAuthState={setAuthState} user={user} setUser={setUser} />
+
         <Container>
           <Switch>
             <Route path="/" exact component={Home} />
-            <Route path="/items" component={Items} />
+            <Route path="/items" render={props => <Items user={user} />}  />
           </Switch>
         </Container>
       </BrowserRouter>
