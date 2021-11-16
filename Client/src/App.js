@@ -3,16 +3,17 @@ import {Container, Modal} from '@material-ui/core';
 import aws_exports from './aws-exports';
 import './App.css';
 import {
-  createTheme,
-  ThemeProvider,
+    createTheme,
+    ThemeProvider,
 } from '@material-ui/core/styles';
-import { BrowserRouter, Route, Switch } from 'react-router-dom';
+import {BrowserRouter, Route, Switch} from 'react-router-dom';
 import Navigation from './components/navigation';
 import Home from './pages/home';
 import Items from './pages/items';
-import { Amplify } from 'aws-amplify';
-import { AmplifyAuthenticator, AmplifySignUp, AmplifySignIn } from '@aws-amplify/ui-react';
-import { onAuthUIStateChange } from '@aws-amplify/ui-components';
+import {Amplify} from 'aws-amplify';
+import {AmplifyAuthenticator, AmplifySignUp, AmplifySignIn} from '@aws-amplify/ui-react';
+import { onAuthUIStateChange} from '@aws-amplify/ui-components';
+
 Amplify.configure(aws_exports);
 
 const displayfont = "'Londrina Shadow', 'sans-serif'";
@@ -20,199 +21,171 @@ const smalldisplayfont = "'Londrina Solid', 'sans-serif'";
 const opensans = "'Open Sans', 'sans-serif'";
 const monospace = "'PT Mono', 'sans-serif'";
 
-// This is the highest tier of theme, styling here will cascade down through nested components, but more specific theme elements will be added downstream as well
+// Theme
 const app_theme = createTheme({
-  spacing: 2,
-  typography: {
-    primary: {
-      fontFamily: opensans,
+    spacing: 2,
+    typography: {
+        primary: {
+            fontFamily: opensans,
+        },
+        h6: {
+            fontFamily: displayfont,
+            fontSize: '4rem',
+            fontWeight: 900,
+            flexGrow: 1,
+        },
+        h5: {
+            fontFamily: smalldisplayfont,
+            fontSize: '2rem',
+            fontWeight: 500,
+            flexGrow: 1,
+            paddingLeft: '20px',
+        },
+        h4: {
+            fontFamily: opensans,
+            padding: '10px',
+            fontSize: '2rem',
+            fontWeight: 'bold',
+        },
+        h3: {
+            fontFamily: monospace,
+            padding: '10px',
+            fontSize: '1rem',
+            fontWeight: 'bold',
+        },
     },
-    h6: {
-      fontFamily: displayfont,
-      fontSize: '4rem',
-      fontWeight: 900,
-      flexGrow: 1,
-    },
-    h5: {
-      fontFamily: smalldisplayfont,
-      fontSize: '2rem',
-      fontWeight: 500,
-      flexGrow: 1,
-      paddingLeft:'20px',
-    },
-    h4: {
-      fontFamily: opensans,
-      padding: '10px',
-      fontSize: '2rem',
-      fontWeight: 'bold',
-    },
-    h3: {
-      fontFamily: monospace,
-      padding: '10px',
-      fontSize: '1rem',
-      fontWeight: 'bold',
-    },
-  },
-  palette: {
-    primary: {
-      light: '#be9c91',
-      main: '#8d6e63',
-      dark: '#5f4339',
-      contrastText: '#fff',
-    },
-    secondary: {
-      light: '#ffff74',
-      main: '#ffd740',
-      dark: '#c8a600',
-      contrastText: '#000',
-    },
-    background: {
-      default: '#eceff1',
-    },
+    palette: {
+        primary: {
+            light: '#be9c91',
+            main: '#8d6e63',
+            dark: '#5f4339',
+            contrastText: '#fff',
+        },
+        secondary: {
+            light: '#ffff74',
+            main: '#ffd740',
+            dark: '#c8a600',
+            contrastText: '#000',
+        },
+        background: {
+            default: '#eceff1',
+        },
 
-  }
+    }
 });
 
-// usestyles makes styles out of the theme
-/*const useStyles = makeStyles((app_theme) => ({
-  pagetitle: {
-    padding: app_theme.spacing(9),
-  },
-  canvas: {
-    padding: 20,
-  },
-  input: {
-    display: 'none',
-  }
-}));*/
-
-
 const App = () => {
-  //const [drawer, setDrawer] = useState();
-  const [user, setUser ] = useState();
-  const [authState, setAuthState] = useState();
 
-  const [authopen, setAuthopen] =  useState(false);
+    // Hooks
+    const [user, setUser] = useState();
+    const [authState, setAuthState] = useState();
+    const [authopen, setAuthopen] = useState(false);
 
-  /*const toggleDrawer = (anchor, open) => (event) => {
-    if (
-      event.type === 'keydown' &&
-      (event.key === 'Tab' || event.key === 'Shift')
-    ) {
-      return;
+    // Functions for requests to servers
+    async function testServer() {
+
+        if ((user !== undefined) && (user !== null)) {
+
+            let url = encodeURI(`https://${process.env.REACT_APP_API_DOMAIN}.${process.env.REACT_APP_ROOT_DOMAIN}/`)
+            let token = user.signInUserSession.idToken.jwtToken
+
+            const response = await fetch(url, {
+                redirect: 'follow',
+                headers: {
+                    Authorization: `${token}`,
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json'
+                },
+            });
+
+            // handle the followup with another await
+            // eslint-disable-next-line no-unused-vars
+            const res = await response.json()
+                .then((json) => {
+                    console.log('json', json)
+                })
+                .catch((err) => console.log(err));
+        }
     }
 
-    setDrawer({ ...drawer, [anchor]: open });
-  };*/
+    // Functions for client-side interactions
+    const handleClose = () => {
+        setAuthopen(false)
+    };
 
+    // Use Effect
+    useEffect(() => {
 
-  async function testServer() {
-
-      if ((user !== undefined ) && (user !== null )) {
-
-          let url = encodeURI(`https://${process.env.REACT_APP_API_DOMAIN}.${process.env.REACT_APP_ROOT_DOMAIN}/`)
-          let token = user.signInUserSession.idToken.jwtToken
-          console.log('testing server: ', url)
-          // make the the request with fetch
-          const response = await fetch(url, {
-              redirect: 'follow',
-              headers: {
-                  Authorization: `${token}`,
-                  Accept: 'application/json',
-                  'Content-Type': 'application/json'
-              },
-          });
-
-          // handle the followup with another await
-          const res = await response
-              .json()
-              .then((json) => {
-                  // work here with the json response object
-                  console.log('json', json)
-                  //setIsLoading(false);
-              })
-              .catch((err) => console.log(err));
-      }
-  }
-
-  const handleClose = () => {
-
-    setAuthopen(false)
-  };
-
-  useEffect(() => {
-
-    return onAuthUIStateChange((nextAuthState, authData) => {
-            console.log('state:', nextAuthState)
+        return onAuthUIStateChange((nextAuthState, authData) => {
+            console.log('state app:', nextAuthState)
             setAuthState(nextAuthState);
-            if (nextAuthState === 'signedin'){
+            if (nextAuthState === 'signedin') {
                 setUser(authData);
                 setAuthopen(false);
                 testServer();
             }
-            if (nextAuthState === 'signedout'){
+            if (nextAuthState === 'signedout') {
                 setUser(null);
                 setAuthopen(false);
             }
 
         });
-  });
+    });
 
-  return (
-    <ThemeProvider theme={ app_theme }>
-      <BrowserRouter>
+    // Component
+    return (
+        <ThemeProvider theme={app_theme}>
+            <BrowserRouter>
+                {authopen ? (
+                    <Modal
+                        open={authopen}
+                        onClose={handleClose}
+                    >
+                        {<AmplifyAuthenticator>
+                            <AmplifySignIn
+                                headerText="Please Sign In"
+                                slot="sign-in"
+                                usernameAlias="email"
+                            >
+                                <div slot="federated-buttons">
+                                </div>
+                            </AmplifySignIn>
+                            <AmplifySignUp
+                                slot="sign-up"
+                                usernameAlias="email"
+                                formFields={[
+                                    {
+                                        type: "email",
+                                        label: "Email:",
+                                        placeholder: "Custom email placeholder",
+                                        inputProps: {required: true, autocomplete: "username"},
+                                    },
+                                    {
+                                        type: "password",
+                                        label: "Password:",
+                                        placeholder: "Custom password placeholder",
+                                        inputProps: {required: true, autocomplete: "new-password"},
+                                    },
 
-        {authopen ? (
-
-            <Modal
-                open={authopen}
-                onClose={handleClose}
-            >
-                 {<AmplifyAuthenticator>
-              <AmplifySignIn
-                headerText="Please Sign In"
-                slot="sign-in"
-                usernameAlias="email"
-              >
-                   <div slot="federated-buttons">
-                   </div>
-              </AmplifySignIn>
-                <AmplifySignUp
-            slot="sign-up"
-            usernameAlias="email"
-            formFields={[
-              {
-                type: "email",
-                label: "Email:",
-                placeholder: "Custom email placeholder",
-                inputProps: { required: true, autocomplete: "username" },
-              },
-              {
-                type: "password",
-                label: "Password:",
-                placeholder: "Custom password placeholder",
-                inputProps: { required: true, autocomplete: "new-password" },
-              },
-
-            ]}
-          />
-            </AmplifyAuthenticator>}
-                </Modal>
+                                ]}
+                            />
+                        </AmplifyAuthenticator>}
+                    </Modal>
                 ) : null
                 }
 
+                <Navigation setAuthopen={setAuthopen} authState={authState}
+                            setAuthState={setAuthState} user={user} setUser={setUser}/>
 
-        <Navigation authopen={authopen} setAuthopen={setAuthopen} authState={authState} setAuthState={setAuthState} user={user} setUser={setUser} />
-
-        <Container>
-          <Switch>
-            <Route path="/" exact component={Home} />
-            <Route path="/items" render={props => <Items user={user} />}  />
-          </Switch>
-        </Container>
-      </BrowserRouter>
-    </ThemeProvider>
-  );
+                <Container>
+                    <Switch>
+                        <Route path="/" exact component={Home}/>
+                        <Route path="/items" render={props => <Items user={user}/>}/>
+                    </Switch>
+                </Container>
+            </BrowserRouter>
+        </ThemeProvider>
+    );
 };
 
 export default App;

@@ -1,224 +1,228 @@
-import React, { useState, useEffect, Fragment } from 'react';
+import React, {useState, useEffect, Fragment} from 'react';
 import awsExports from "../aws-exports";
 
 import {
-  Typography,
-  Container,
-  Grid,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails
+    Typography,
+    Container,
+    Grid,
+    Accordion,
+    AccordionSummary,
+    AccordionDetails
 } from '@material-ui/core';
 
 import Item from '../components/item';
 import NewItem from '../components/newitem';
-import { Amplify, Auth } from 'aws-amplify';
+import {Amplify, Auth} from 'aws-amplify';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+
 Amplify.configure(awsExports);
 
 
-
 const Items = (user) => {
-  const [isEmpty, setIsEmpty] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [items, setItems ] = useState();
-  const [inauthentic, setInauthentic ] = useState();
 
-  const [token, setToken] = useState();
+    //Hooks
+    const [isEmpty, setIsEmpty] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [items, setItems] = useState();
+    const [inauthentic, setInauthentic] = useState();
+    const [token, setToken] = useState();
 
+    // Functions for requests to servers
+    async function fetchItems() {
+        if (typeof token != 'undefined') {
+            // make the the request with fetch=
+            let url = encodeURI(`https://${process.env.REACT_APP_API_DOMAIN}.${process.env.REACT_APP_ROOT_DOMAIN}/items/createdBy`)
+            console.log(url)
+            const response = await fetch(url, {
+                headers: {
+                    Authorization: `${token}`,
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                redirect: 'follow'
+            });
 
-  async function fetchItems() {
-    console.log('fetch')
-    if (typeof token != 'undefined') {
-      // make the the request with fetch
-      console.log(process.env.REACT_APP_API_URL)
-      let url = encodeURI(`https://${process.env.REACT_APP_API_DOMAIN}.${process.env.REACT_APP_ROOT_DOMAIN}/items/createdBy`)
-      console.log(url)
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `${token}`,
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-        redirect: 'follow'
-      });
+            // handle the followup with another await
+            const res = await response
+                .json()
+                .then((json) => {
+                    // work here with the json response object
+                    if (json.Items.length > 0) {
+                        setItems(json.Items);
+                        setIsEmpty(false)
+                    } else {
+                        setIsEmpty(true)
+                    }
 
-      // handle the followup with another await
-      const res = await response
-          .json()
-          .then((json) => {
-            // work here with the json response object
-            if (json.Items.length > 0){
-              setItems(json.Items);
-              setIsEmpty(false)
-            } else {
-              setIsEmpty(true)
-            }
+                    setIsLoading(false);
+                })
+                .catch((err) => console.log(err));
+        }
 
-            setIsLoading(false);
-          })
-          .catch((err) => console.log(err));
+    };
+
+    async function newItem(title, body) {
+        let url = encodeURI(`https://${process.env.REACT_APP_API_DOMAIN}.${process.env.REACT_APP_ROOT_DOMAIN}/items?title=${title}`)
+        console.log('url: ', url)
+
+        const resp = await fetch(url, {
+            method: 'POST',
+            headers: {
+                Authorization: `${token}`
+            },
+            body: body,
+            redirect: 'follow'
+        });
+
+        const res = await resp
+            .json()
+            .then((json) => {
+
+                setIsLoading(true);
+                setIsEmpty(false);
+                console.log(res)
+            })
+            .catch((err) => console.log(err));
+
+        fetchItems();
+    };
+
+    async function deleteItem(itemId) {
+
+        let url = encodeURI(`https://${process.env.REACT_APP_API_DOMAIN}.${process.env.REACT_APP_ROOT_DOMAIN}/items/${itemId}`)
+
+        if (typeof token != 'undefined') {
+            // make the the request with fetch
+            const response = await fetch(url, {
+                method: 'DELETE',
+                headers: {
+                    Authorization: `${token}`,
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            // handle the followup with another await
+            const res = await response
+                .json()
+                .then((json) => {
+                    // work here with the json response object
+
+                    setIsLoading(false);
+
+                })
+                .catch((err) => console.log(err));
+            fetchItems();
+        }
     }
 
-  };
-
-  async function newItem(title, body ) {
-    let url = encodeURI(`https://${process.env.REACT_APP_API_DOMAIN}.${process.env.REACT_APP_ROOT_DOMAIN}/items?title=${title}`)
-    console.log('url: ', url)
-
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers: {
-        Authorization: `${token}`
-        },
-      body: body,
-      redirect: 'follow'
-    });
-
-    const res = await resp
-      .json()
-      .then((json) => {
-
-        setIsLoading(true);
-        setIsEmpty(false);
-        console.log(res)
-      })
-      .catch((err) => console.log(err));
-
-      fetchItems();
-  };
-
-  async function deleteItem(itemId){
-
-    let url = encodeURI(`https://${process.env.REACT_APP_API_DOMAIN}.${process.env.REACT_APP_ROOT_DOMAIN}/items/${itemId}`)
-
-    if (typeof token != 'undefined') {
-      // make the the request with fetch
-      const response = await fetch(url, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `${token}`,
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-      });
-
-      // handle the followup with another await
-      const res = await response
-          .json()
-          .then((json) => {
-            // work here with the json response object
-
-            setIsLoading(false);
-
-          })
-          .catch((err) => console.log(err));
-          fetchItems();
-    }
-  }
-
-  async function updateItem(itemId, title, body ) {
+    async function updateItem(itemId, title, body) {
 
 
-    let url = encodeURI(`https://${process.env.REACT_APP_API_DOMAIN}.${process.env.REACT_APP_ROOT_DOMAIN}/items/${itemId}?title=${title}`)
+        let url = encodeURI(`https://${process.env.REACT_APP_API_DOMAIN}.${process.env.REACT_APP_ROOT_DOMAIN}/items/${itemId}?title=${title}`)
 
-    console.log('updating: ', itemId, title, body )
+        console.log('updating: ', itemId, title, body)
 
-    const resp = await fetch(url, {
-      method: 'PUT',
-      headers: {
-        Authorization: `${token}`,
-        Accept: 'application/json',
-      },
-      body: body,
-      redirect: 'follow',
-    });
+        const resp = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                Authorization: `${token}`,
+                Accept: 'application/json',
+            },
+            body: body,
+            redirect: 'follow',
+        });
 
-    const res = await resp
-      .json()
-      .then((json) => {
-          setIsLoading(true);
-      })
-      .catch((err) => console.log(err));
+        const res = await resp
+            .json()
+            .then((json) => {
+                setIsLoading(true);
+            })
+            .catch((err) => console.log(err));
 
-      fetchItems();
-  };
+        fetchItems();
+    };
 
-  async function handleChange(item) {
+    // Functions for client-side interactions
+    async function handleChange(item) {
         // Here, we invoke the callback with the new value
 
 
-      console.log('change: ', item)
-      // a new call to fetch data will get the updated list from the server after it is submitted
-      setIsLoading(true);
+        console.log('change: ', item)
+        // a new call to fetch data will get the updated list from the server after it is submitted
+        setIsLoading(true);
 
-  };
+    };
 
-  useEffect(() => {
-  Auth.currentAuthenticatedUser()
-      .then(authuser => {
-        setToken(authuser.signInUserSession.idToken.jwtToken)
-        fetchItems()
-      }, reason => {
-        console.log('need follow-through for un-authenticated')
-        setInauthentic(true)
-        setIsLoading(false)
-      })
+    //Use Effect
+    useEffect(() => {
+        console.log('items effect')
+        Auth.currentAuthenticatedUser()
+            .then(authuser => {
+                setToken(authuser.signInUserSession.idToken.jwtToken)
+                setInauthentic(false)
+                fetchItems()
+            }, reason => {
+                console.log('need follow-through for un-authenticated')
+                setInauthentic(true)
+                setIsLoading(false)
+            })
 
-}, [user, token, isLoading]);
+    }, [user, token]);
 
 
-  if (isLoading) {
-    return <Typography>Loading ...</Typography>
-  }
+    if (isLoading) {
+        return <Typography>Loading ...</Typography>
+    }
 
-  if (inauthentic) {
-    return <Typography>Must Sign In to See Items ...</Typography>
-  }
+    if (inauthentic) {
+        return <Typography>Must Sign In to See Items ...</Typography>
+    }
 
-  if (isEmpty) {
+    if (isEmpty) {
+        return (
+            <Fragment>
+                <Typography>No Items Returned</Typography>
+                <NewItem items={items} newItem={newItem} updateItem={updateItem}/>
+            </Fragment>
+        );
+
+    }
+
     return (
-      <Fragment>
-      <Typography>No Items Returned</Typography>
-      <NewItem items={ items } newItem={ newItem } updateItem={ updateItem } />
-    </Fragment>
-    );
+        <Container className="container">
+            <Grid container direction="column" justifyContent="space-between" spacing={8}>
 
-  }
+                {items.map((item, i) =>
+                    <Grid item key={i}>
+                        <Accordion TransitionProps={{unmountOnExit: true}}>
+                            <AccordionSummary
+                                expandIcon={<ExpandMoreIcon/>}
+                                aria-controls="panel2a-content"
+                                id="panel2a-header"
 
-  return (
-      <Container className="container">
-            <Grid container direction="column" justifyContent="space-between" spacing={8} >
+                            >
+                                <Typography variant="h5">{item.itemTitle}</Typography>
+                            </AccordionSummary>
+                            <AccordionDetails>
 
-            {items.map((item, i) =>
-                <Grid item key={i} >
-                  <Accordion TransitionProps={{ unmountOnExit: true }} >
-                    <AccordionSummary
-                      expandIcon={<ExpandMoreIcon />}
-                      aria-controls="panel2a-content"
-                      id="panel2a-header"
+                                <Item item={item} token={token} onChange={handleChange} deleteItem={deleteItem}
+                                      updateItem={updateItem}/>
 
-                    >
-                      <Typography variant="h5">{item.itemTitle}</Typography>
-                      </AccordionSummary>
-                      <AccordionDetails >
+                            </AccordionDetails>
+                        </Accordion>
+                    </Grid>
+                )}
 
-                          <Item item={item} token={token} onChange={handleChange} deleteItem={deleteItem} updateItem={ updateItem } />
 
-                          </AccordionDetails>
-                    </Accordion>
+                <Grid>
+                    <NewItem items={items} newItem={newItem} updateItem={updateItem}/>
                 </Grid>
-            )}
-
-
-              <Grid>
-            <NewItem items={ items } newItem={ newItem } updateItem={ updateItem } />
-              </Grid>
 
             </Grid>
 
-      </Container>
-  );
+        </Container>
+    );
 };
 
 export default Items;
