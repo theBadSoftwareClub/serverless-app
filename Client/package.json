@@ -28,7 +28,7 @@
     "react": "latest",
     "react-dom": "latest",
     "react-router-dom": "5.2.0",
-    "react-scripts": "latest",
+    "react-scripts": "4.0.3",
     "json-to-pretty-yaml": "latest"
   },
   "scripts": {
