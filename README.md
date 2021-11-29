@@ -1,6 +1,6 @@
 # serverless-example
 
-An Example of Leveraging AWS to host a Simple, scalable web Application
+An Example of Leveraging AWS to host a Simple, Scalable Web Application
 
 # Prerequisites:
 
