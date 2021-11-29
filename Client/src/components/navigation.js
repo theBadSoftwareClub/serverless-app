@@ -143,7 +143,7 @@ const Navigation = ({setAuthopen, authState,  user }) => {
                         <MenuIcon/>
                     </IconButton>
                     <Typography variant="h6" className={classes.title}>
-                        Example Application
+                        Example App!
                     </Typography>
                     <>
                         {authState === AuthState.SignedIn && user ? (
