@@ -1,6 +1,6 @@
 # serverless-example
 
-An Example of Leveraging AWS to host a Simple, Scalable Web Application.
+Leveraging AWS to host a simple, scalable web application.
 
 Client App is a SPA built with React, it is hosted and ditributed by AWS CloudFront CDN
 
