@@ -1,6 +1,15 @@
 # serverless-example
 
-An Example of Leveraging AWS to host a Simple, Scalable Web Application
+An Example of Leveraging AWS to host a Simple, Scalable Web Application.
+
+Client App is a SPA built with React, it is hosted and ditributed by AWS CloudFront CDN
+
+The Server(less) functionality is hosted using AWS Services:
+
+ - Cognito for User Authentication
+ - Api Gateway for a REST API
+ - DynamoDB for key-value storage (indexes)
+ - S3 for object storage
 
 # Prerequisites:
 
