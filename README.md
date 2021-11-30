@@ -10,6 +10,7 @@ The Server(less) functionality is hosted using AWS Services:
  - Api Gateway for a REST API
  - DynamoDB for key-value storage (indexes)
  - S3 for object storage
+ - Lambda for server-side functionality
 
 # Prerequisites:
 
