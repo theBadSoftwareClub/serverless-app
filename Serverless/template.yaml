@@ -6,7 +6,7 @@ Description: >
 Parameters:
   RootDomain:
     Type: String
-    Default: "thebadsoftwareclub.net"
+    Default: "domainname.net"
 
   AwsAccountId:
     Type: String
@@ -14,7 +14,7 @@ Parameters:
 
   AwsDefaultRegion:
     Type: String
-    Default: "us-west-2"
+    Default: ""
 
   AcmCertificateId:
     Type: String
